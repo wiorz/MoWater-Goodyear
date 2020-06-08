@@ -1,0 +1,6 @@
+Debug/
+bin/DeBug/
+bin/
+Presentation/
+*/Presentation/
+Others/
