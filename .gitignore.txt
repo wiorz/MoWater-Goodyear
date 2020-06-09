@@ -4,3 +4,5 @@ bin/
 Presentation/
 */Presentation/
 Others/
+RCode/goodyearEDA.R
+*/goodyearEDA.R
