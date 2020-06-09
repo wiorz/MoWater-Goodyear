@@ -1,0 +1,90 @@
+---
+title: "goodyear"
+author: "Blake Loosley"
+date: "6/3/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+load("/Users/Blake Loosley/Documents/School/Statistics/Data Science/goodyear/goodyearMoWater.rda")
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(viridis)
+
+dfData <- as_tibble(goodyear)
+
+#is.na(goodyear$H2S.mg.L)
+
+dfDataC <- dfData[!is.na(dfData$Selenium), ]
+
+pdf(file = "/Users/Blake Loosley/Documents/School/Data Science Internship/Images/Facet_Grid_Selenium.pdf",
+    width = 12,
+    height = 8)
+
+dfDataC %>%
+  filter(year(date) <= 2014 | year(date) >= 2015) %>%
+  ggplot(aes(x = as.Date(date), y = Selenium, color = ID)) +
+    facet_grid(rows = vars(ID)) +
+    geom_point() +
+    geom_line(aes(y = 0.002), color = "red", alpha = 0.5) +
+    scale_x_date(date_breaks = "6 months", date_labels = "%b %y") +
+    scale_color_viridis_d() +
+    xlab("Date") +
+    ylab("Selenium Content (mg/L)") +
+    labs(title = "Selenium Content per Bin")
+
+dev.off()
+  
+```
+
+```{r}
+dfDataT <- dfData[!is.na(dfData$Temp..Celsius), ]
+
+pdf(file = "/Users/Blake Loosley/Documents/School/Data Science Internship/Images/Facet_Grid_Temp.pdf",
+    width = 12,
+    height = 8)
+
+dfDataT %>%
+  filter(year(date) <= 2014 | year(date) >= 2015) %>%
+  ggplot(aes(x = as.Date(date), y = Temp..Celsius, color = ID)) +
+    facet_grid(rows = vars(ID)) +
+    geom_line() +
+    ylim(10, 45) +
+    scale_x_date(date_breaks = "6 months", date_labels = "%b %y") +
+    scale_color_viridis_d() +
+    xlab("Date") +
+    ylab("Temperature (degrees Celsius)") +
+    labs(title = "Temperature Change per Bin")
+
+dev.off()
+```
+
+```{r}
+dfDataT <- dfData[!is.na(dfData$Temp..Celsius), ]
+
+pdf(file = "/Users/Blake Loosley/Documents/School/Data Science Internship/Images/Grid_Temp.pdf",
+    width = 12,
+    height = 8)
+
+dfDataT %>%
+  filter(year(date) <= 2014 | year(date) >= 2015) %>%
+  ggplot(aes(x = as.Date(date), y = Temp..Celsius, color = ID)) +
+    geom_line() +
+    ylim(10, 45) +
+    scale_x_date(date_breaks = "6 months", date_labels = "%b %y") +
+    scale_color_viridis_d() +
+    xlab("Date") +
+    ylab("Temperature (degrees Celsius)") +
+    labs(title = "Temperature Change per Bin")
+
+dev.off()
+```
