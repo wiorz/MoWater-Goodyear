@@ -310,8 +310,7 @@ plotSelvCODB1P1 <- dfDataSel %>%
     ylab("selenium mg/L") + 
     labs(title= "Selenium vs COD linear regression of Bin1 Period A")
 plotSelvCODB1P1
-
-ggsave(filename = "Images/Selenium vs DO linear regression Bin1 Period A.png", 
+ggsave(filename = "Images/Selenium vs COD linear regression Bin1 Period A.png", 
        plotSelvCODB1P1,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
@@ -354,7 +353,7 @@ plotSelvDOB6P4 <- dfDataSel %>%
     ylab("selenium mg/L") + 
     labs(title= "Selenium vs COD linear regression for Bin6 Period 4")
 plotSelvDOB6P4
-ggsave(filename = "Selenium vs COD linear regression Bin6 Period 4.png", 
+ggsave(filename = "Images/Selenium vs COD linear regression Bin6 Period 4.png", 
        plotSelvDOB6P4,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
