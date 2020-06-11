@@ -79,7 +79,7 @@ bin34Periods <- c(bin34Period1End, bin34Period2End)
 #       for period bin1567Period1End~bin1567Period2End, in 4 months interval.
 #
 
-drawInVSOutXYOfPeriod <- function(dataset, influent, effluent, startPeriod, 
+GGPInVSOutXYOfPeriod <- function(dataset, influent, effluent, startPeriod, 
                                      endPeriod, varX, varY, interval_string)
 {
     resultPlot <- dataset %>% 
@@ -95,7 +95,7 @@ drawInVSOutXYOfPeriod <- function(dataset, influent, effluent, startPeriod,
 }
 
 # Only looking at brine and train 1 (bin1, bin5, bin7) for after the train change.
-drawTrain1VSBrine <- function(dataset, interval_string, chemical)
+GGPTrain1VSBrine <- function(dataset, interval_string, chemical)
 {
     resultPlot <- dataset %>% 
         filter(ID == "Bin1" | ID == "Bin5" | 
@@ -127,7 +127,7 @@ drawTrain1VSBrine <- function(dataset, interval_string, chemical)
 }
 
 # train 2 doesn't show periods because bin 2 and 6 have different periods.
-drawTrain2VSBrine <- function(dataset, interval_string, chemical)
+GGPTrain2VSBrine <- function(dataset, interval_string, chemical)
 {
     resultPlot <- dataset %>% 
         filter(ID == "Bin2" | ID == "Bin6" | ID == "brine") %>% 
@@ -144,7 +144,7 @@ drawTrain2VSBrine <- function(dataset, interval_string, chemical)
     return(resultPlot) 
 }
 
-drawTrain3VSBrine <- function(dataset, interval_string, chemical)
+GGPTrain3VSBrine <- function(dataset, interval_string, chemical)
 {
     resultPlot <- dataset %>% 
         filter(ID == "Bin4" | ID == "brine") %>% 
@@ -170,7 +170,7 @@ drawTrain3VSBrine <- function(dataset, interval_string, chemical)
     return(resultPlot) 
 }
 
-drawTrain4VSBrine <- function(dataset, interval_string, chemical)
+GGPTrain4VSBrine <- function(dataset, interval_string, chemical)
 {
     resultPlot <- dataset %>% 
         filter(ID == "Bin3" | ID == "brine") %>% 
@@ -201,7 +201,7 @@ drawTrain4VSBrine <- function(dataset, interval_string, chemical)
 # Or maybe draw at a larger scale, current the plot set at 1280 x 735. 
 
 #draw grid function
-drawGrid2x2 <- function(plot1, plot2, plot3, plot4)
+GGPGrid2x2 <- function(plot1, plot2, plot3, plot4)
 {
     g1 <- ggplotGrob(plot1)
     g2 <- ggplotGrob(plot2)
@@ -217,18 +217,18 @@ drawGrid2x2 <- function(plot1, plot2, plot3, plot4)
 #--------------------------------
 
 #Selenium contents for train 1 for different periods
-plotT1vBrine <- drawTrain1VSBrine(dfDataSel, "4 months", "Selenium")
+plotT1vBrine <- GGPTrain1VSBrine(dfDataSel, "4 months", "Selenium")
 plotT1vBrine
 
 #Train2
-plotT2vBrine <- drawTrain2VSBrine(dfDataSel, "4 months", "Selenium")
+plotT2vBrine <- GGPTrain2VSBrine(dfDataSel, "4 months", "Selenium")
 plotT2vBrine
 
 #Train3
-plotT3vBrine <- drawTrain3VSBrine(dfDataSel, "4 months", "Selenium")
+plotT3vBrine <- GGPTrain3VSBrine(dfDataSel, "4 months", "Selenium")
 plotT3vBrine
 
-plotT4vBrine <- drawTrain4VSBrine(dfDataSel, "4 months", "Selenium")
+plotT4vBrine <- GGPTrain4VSBrine(dfDataSel, "4 months", "Selenium")
 plotT4vBrine
 
 #---------------------------------------------------
