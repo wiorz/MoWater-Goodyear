@@ -16,7 +16,9 @@ load("/Users/Blake Loosley/Documents/School/Statistics/Data Science/goodyear/goo
 ```
 
 ```{r}
-library(tidyverse)
+library( tidyverse); theme_set(theme_minimal())
+    theme_update(panel.grid.minor = element_blank())
+    
 library(lubridate)
 library(viridis)
 
@@ -98,11 +100,12 @@ pdf(file = "/Users/Blake Loosley/Documents/School/Data Science Internship/Images
 
 dfDataC %>%
   filter(year(date) <= 2014 | year(date) >= 2015) %>%
-  ggplot(aes(y = Selenium, color = ID)) +
-    geom_boxplot() +
-    scale_color_viridis_d() +
+  ggplot(aes(x = ID , y = Selenium, group = ID, color = ID)) +
+    geom_boxplot(fill = "grey") +
+    scale_color_manual(values = c(rep("black", 7), "red3")) + 
     ylab("Selenium (mg/L)") +
-    labs(title = "Selenium Boxplots per Bin")
+    labs(title = "Selenium Boxplots per Effluent") + 
+    theme(legend.position = "none") # show no legend since x axis covers it
 
 dev.off()
 ```
