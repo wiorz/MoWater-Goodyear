@@ -284,8 +284,8 @@ dfDataSelFlow %>%
 
 #----------------------------------------------
 
-#boxplot on bons to see which bins to use
-dfDataSel %>% 
+#boxplot on bons to see which bins to use - 2 tone color
+boxSel2t <- dfDataSel %>% 
     filter(year(date) <= 2014 | year(date) >= 2015) %>%
     ggplot(aes(x = ID , y = Selenium, group = ID, color = ID)) +
     geom_boxplot(fill = "grey") +
@@ -293,40 +293,73 @@ dfDataSel %>%
     ylab("Selenium (mg/L)") +
     labs(title = "Selenium Boxplots per Effluent") + 
     theme(legend.position = "none")
+
+boxSel2t
+
+ggsave(filename = "Images/Selenium_Boxplot_two_tone.png", 
+       boxSel2t,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#multiple color of boxplot base on train
+boxSelTC <- dfDataSel %>% 
+    filter(year(date) <= 2014 | year(date) >= 2015) %>%
+    ggplot(aes(x = ID , y = Selenium, group = ID, color = ID)) +
+    geom_boxplot(fill = "darkgrey") +
+    scale_color_manual(values = c("goldenrod4", "darkgreen", "royalblue3", 
+                                  "red4", "goldenrod4", "darkgreen", 
+                                  "goldenrod4", "black")) + 
+    ylab("Selenium (mg/L)") +
+    labs(title = "Selenium Boxplots per Effluent") + 
+    theme(legend.position = "none")
+
+boxSelTC
+
+ggsave(filename = "Images/Selenium_Boxplot_train_color.png", 
+       boxSelTC,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
 #conclusion: bin2, bin3 (baseline),bin4 and bin 6
 
 #-----------------------------------------------
 
 #Exploring DO and carbon linear regression with Selenium
 
-#Bin 1
-plotSelvCODB1P1 <- dfDataSel %>% 
-    filter(date <= bin1567Period1End & ID == "Bin1") %>% 
+#Bin1 period D
+plotSelvCODB1P4 <- dfDataSel %>% 
+    filter(ID == "Bin1" & date >= bin1567Period3End ) %>% 
     ggplot(aes(COD, Selenium)) + 
     geom_point(alpha = 1, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
     scale_color_brewer(palette = "Dark2") + 
     xlab("COD") +
     ylab("selenium mg/L") + 
-    labs(title= "Selenium vs COD linear regression of Bin1 Period A")
-plotSelvCODB1P1
-ggsave(filename = "Images/Selenium vs COD linear regression Bin1 Period A.png", 
-       plotSelvCODB1P1,
+    labs(title= "Selenium vs COD lin. reg. of Bin1 Period D")
+plotSelvCODB1P4
+ggsave(filename = "Images/Selenium vs COD linear regression Bin1 Period D.png", 
+       plotSelvCODB1P4,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
-#Bin2
+#Bin2 period C
 plotSelvCODB2P3 <- dfDataSel %>% 
     filter(ID == "Bin2") %>% 
     filter(date >= bin2Period2End) %>% 
     ggplot(aes(COD, Selenium))+ 
-    geom_point(alpha = 1) +
+    geom_point(alpha = 1, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
     xlab("COD") +
     ylab("selenium mg/L") + 
-    labs(title= "Selenium vs COD linear regression for Bin2 Period 3")
+    labs(title= "Selenium vs COD lin. reg. for Bin2 Period C")
 plotSelvCODB2P3
 ggsave(filename = "Images/Selenium vs COD linear regression Bin2 Period C.png", 
        plotSelvCODB2P3,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Selenium vs COD for Bin1 and Bin2 during carbon dosing
+plotSelvCODB1B2 <- ggarrange(plotSelvCODB1P4, plotSelvCODB2P3, nrow=2, 
+                             common.legend = FALSE)
+plotSelvCODB1B2
+ggsave(filename = "Images/Selenium vs COD linear regression Bin 1 vs Bin2.png", 
+       plotSelcCODB1B2,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
 #Focus look at Bin2 DO on last period when carbon dosing happens
@@ -343,7 +376,7 @@ plotSelvDOB2P3
 #selenium reduction
 
 #Bin6
-plotSelvDOB6P4 <- dfDataSel %>% 
+plotSelvCODB6P4 <- dfDataSel %>% 
     filter(ID == "Bin6") %>% 
     filter(date >= bin1567Period3End) %>% 
     ggplot(aes(COD, Selenium))+ 
@@ -351,10 +384,25 @@ plotSelvDOB6P4 <- dfDataSel %>%
     geom_smooth(formula = y~x, method = "lm") + 
     xlab("COD") +
     ylab("selenium mg/L") + 
-    labs(title= "Selenium vs COD linear regression for Bin6 Period 4")
-plotSelvDOB6P4
-ggsave(filename = "Images/Selenium vs COD linear regression Bin6 Period 4.png", 
-       plotSelvDOB6P4,
+    labs(title= "Selenium vs COD linear regression for Bin6 Period D")
+plotSelvCODB6P4
+ggsave(filename = "Images/Selenium vs COD linear regression Bin6 Period D.png", 
+       plotSelvCODB6P4,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Bin3
+plotSelvCODB1P1 <- dfDataSel %>% 
+    filter(date <= bin1567Period1End & ID == "Bin3") %>% 
+    ggplot(aes(COD, Selenium)) + 
+    geom_point(alpha = 1, aes(color = ID)) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    scale_color_brewer(palette = "Dark2") + 
+    xlab("COD") +
+    ylab("selenium mg/L") + 
+    labs(title= "Selenium vs COD linear regression of Bin1 Period A")
+plotSelvCODB1P1
+ggsave(filename = "Images/Selenium vs COD linear regression Bin1 Period A.png", 
+       plotSelvCODB1P1,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
 #----------------------------------------------
