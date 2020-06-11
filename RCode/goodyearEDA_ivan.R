@@ -4,11 +4,12 @@ setwd("Baylor/MoWater/proj6/MoWater-Goodyear")
 load("clean/goodyearMoWater.rda" )
 ls()
 library( lubridate)
-library( viridis)
+library( rcartocolor)
+library( RColorBrewer)
 library( scales)
 library( ggpubr)
 library( tidyverse); theme_set(theme_minimal())
-    theme_update(panel.grid.minor = element_blank())
+theme_update(panel.grid.minor = element_blank())
 suppressMessages(library( fields))
 
 #head(goodyear)
@@ -107,7 +108,7 @@ GGPTrain1VSBrine <- function(dataset, interval_string, chemical)
         geom_point(size = 2.5) +  
         geom_line(aes(y = 0.002), color = "red", alpha = 0.5) +
         scale_x_date(date_breaks = interval_string, date_labels = "%b%Y") +
-        scale_color_viridis_d() + 
+        scale_color_brewer(palette = "Dark2") + 
         xlab("Date") + 
         ylab("Selenium Content (mg/L)") +
         labs(title= "Selenium content of Train 1 for period after train change") + 
@@ -137,7 +138,7 @@ GGPTrain2VSBrine <- function(dataset, interval_string, chemical)
         geom_point(size = 2.5) +  
         geom_line(aes(y = 0.002), color = "red", alpha = 0.5) +
         scale_x_date(date_breaks = interval_string, date_labels = "%b %Y") +
-        scale_color_viridis_d() + 
+        scale_color_brewer(palette = "Dark2") +  
         xlab("Date") + 
         ylab("Selenium Content (mg/L)") +
         labs(title= "Selenium content of Train 2 for period after train change")
@@ -154,7 +155,7 @@ GGPTrain3VSBrine <- function(dataset, interval_string, chemical)
         geom_point(size = 2.5) +  
         geom_line(aes(y = 0.002), color = "red", alpha = 0.5) +
         scale_x_date(date_breaks = interval_string, date_labels = "%b %Y") +
-        scale_color_viridis_d() + 
+        scale_color_brewer(palette = "Dark2") + 
         xlab("Date") + 
         ylab("Selenium Content (mg/L)") +
         labs(title= "Selenium content of Train 3 for period after train change") + 
@@ -180,7 +181,7 @@ GGPTrain4VSBrine <- function(dataset, interval_string, chemical)
         geom_point(size = 2.5) +  
         geom_line(aes(y = 0.002), color = "red", alpha = 0.5) +
         scale_x_date(date_breaks = interval_string, date_labels = "%b %Y") +
-        scale_color_viridis_d() + 
+        scale_color_brewer(palette = "Dark2") + 
         xlab("Date") + 
         ylab("Selenium Content (mg/L)") +
         labs(title= "Selenium content of Train 4 for period after train change") + 
@@ -220,20 +221,33 @@ DrawGrid2x2 <- function(plot1, plot2, plot3, plot4)
 #Selenium contents for train 1 for different periods
 plotT1vBrine <- GGPTrain1VSBrine(dfDataSel, "4 months", "Selenium")
 plotT1vBrine
+ggsave(filename = "Images/Train 1 Selenium vs Brine.png", 
+       plotT1vBrine,
+       width = 42.3, height = 23.15, units = "cm", device='png')
 
 #Train2
 plotT2vBrine <- GGPTrain2VSBrine(dfDataSel, "4 months", "Selenium")
 plotT2vBrine
+ggsave(filename = "Images/Train 2 Selenium vs Brine.png", 
+       plotT2vBrine,
+       width = 42.3, height = 23.15, units = "cm", device='png')
 
 #Train3
 plotT3vBrine <- GGPTrain3VSBrine(dfDataSel, "4 months", "Selenium")
 plotT3vBrine
+ggsave(filename = "Images/Train 3 Selenium vs Brine.png", 
+       plotT3vBrine,
+       width = 42.3, height = 23.15, units = "cm", device='png')
 
+#Train 4
 plotT4vBrine <- GGPTrain4VSBrine(dfDataSel, "4 months", "Selenium")
 plotT4vBrine
+ggsave(filename = "Images/Train 4 Selenium vs Brine.png", 
+       plotT4vBrine,
+       width = 42.3, height = 23.15, units = "cm", device='png')
 
 #---------------------------------------------------
-#Netflow vs Selenium linear relation check
+#Netflow vs Selenium linear regression check
 
 #cleaning inflow and outflow
 dfDataSelFlow <- dfDataSel[!is.na(dfDataSel$Inflow), ]
@@ -244,16 +258,18 @@ dfDataSelFlow <- add_column(dfDataSelFlow,
                                            dfDataSelFlow$Inflow) ) 
 # glimpse(dfDataFlow)
 
-# regression analysis of Netflow vs Selenium for Train 1
+#Regression analysis of Netflow vs Selenium for Train 1
+#can also use : scale_color_carto_d("Effluent Selenium") 
 dfDataSelFlow %>% 
     filter(ID == "Bin1" | ID == "Bin5" | ID == "Bin7") %>% 
     ggplot(aes(Selenium, netflow)) +
-    geom_point(alpha = 1, aes(color = ID)) +
+    geom_point(size = 2, alpha = 1, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + # formula always look at the variable in terms of x
-    scale_color_viridis_d("Selenium and netflow") +
+    scale_color_brewer(palette = "Dark2") + 
     xlab("selenium") +  
     ylab("netflow") +
     labs(title= "Selenium vs netflow RA for Train 1")
+
 
 # regression analysis of Netflow vs Selenium for Train 4
 dfDataSelFlow %>% 
@@ -261,19 +277,86 @@ dfDataSelFlow %>%
     ggplot(aes(Selenium, netflow)) +
     geom_point(alpha = 1, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
-    scale_color_viridis_d("Selenium and netflow") +
+    scale_color_brewer(palette = "Dark2") + 
     xlab("selenium") + 
     ylab("netflow") +
     labs(title= "Selenium vs netflow RA for Train 4")
 
 #----------------------------------------------
 
-#Exploring DO.mg.L relationship with Selenium
-
+#boxplot on bons to see which bins to use
 dfDataSel %>% 
-    ggplot()
+    filter(year(date) <= 2014 | year(date) >= 2015) %>%
+    ggplot(aes(x = ID , y = Selenium, group = ID, color = ID)) +
+    geom_boxplot(fill = "grey") +
+    scale_color_manual(values = c(rep("black", 7), "red3")) + 
+    ylab("Selenium (mg/L)") +
+    labs(title = "Selenium Boxplots per Effluent") + 
+    theme(legend.position = "none")
+#conclusion: bin2, bin3 (baseline),bin4 and bin 6
 
+#-----------------------------------------------
 
+#Exploring DO and carbon linear regression with Selenium
+
+#Bin 1
+plotSelvCODB1P1 <- dfDataSel %>% 
+    filter(date <= bin1567Period1End & ID == "Bin1") %>% 
+    ggplot(aes(COD, Selenium)) + 
+    geom_point(alpha = 1, aes(color = ID)) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    scale_color_brewer(palette = "Dark2") + 
+    xlab("COD") +
+    ylab("selenium mg/L") + 
+    labs(title= "Selenium vs COD linear regression of Bin1 Period A")
+plotSelvCODB1P1
+
+ggsave(filename = "Images/Selenium vs DO linear regression Bin1 Period A.png", 
+       plotSelvCODB1P1,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Bin2
+plotSelvCODB2P3 <- dfDataSel %>% 
+    filter(ID == "Bin2") %>% 
+    filter(date >= bin2Period2End) %>% 
+    ggplot(aes(COD, Selenium))+ 
+    geom_point(alpha = 1) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    xlab("COD") +
+    ylab("selenium mg/L") + 
+    labs(title= "Selenium vs COD linear regression for Bin2 Period 3")
+plotSelvCODB2P3
+ggsave(filename = "Images/Selenium vs COD linear regression Bin2 Period C.png", 
+       plotSelvCODB2P3,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Focus look at Bin2 DO on last period when carbon dosing happens
+plotSelvDOB2P3 <- dfDataSel %>% 
+    filter(ID == "Bin2" & date >= bin2Period2End) %>% 
+    ggplot(aes(DO.mg.L, Selenium))+ 
+    geom_point(alpha = 1) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    xlab("DO mg/L") +
+    ylab("selenium mg/L") + 
+    labs(title= "Selenium vs DO linear regression for Bin2 Period C")
+plotSelvDOB2P3
+#conclusion: not enough data to back up the claims of higher DO leads to more 
+#selenium reduction
+
+#Bin6
+plotSelvDOB6P4 <- dfDataSel %>% 
+    filter(ID == "Bin6") %>% 
+    filter(date >= bin1567Period3End) %>% 
+    ggplot(aes(COD, Selenium))+ 
+    geom_point(alpha = 1) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    xlab("COD") +
+    ylab("selenium mg/L") + 
+    labs(title= "Selenium vs COD linear regression for Bin6 Period 4")
+plotSelvDOB6P4
+ggsave(filename = "Selenium vs COD linear regression Bin6 Period 4.png", 
+       plotSelvDOB6P4,
+       width = 42.3, height = 23.15, units = "cm", device='png')
 
 #----------------------------------------------
 
@@ -281,7 +364,7 @@ dfDataSel %>%
 #Focus: bin 3
 #Reason: bin3 is our baseline
 #Period 1
-b3p1
+
 
 
 
