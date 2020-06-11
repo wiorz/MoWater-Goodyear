@@ -16,7 +16,9 @@ load("/Users/Blake Loosley/Documents/School/Statistics/Data Science/goodyear/goo
 ```
 
 ```{r}
-library(tidyverse)
+library( tidyverse); theme_set(theme_minimal())
+    theme_update(panel.grid.minor = element_blank())
+    
 library(lubridate)
 library(viridis)
 
@@ -26,7 +28,7 @@ dfData <- as_tibble(goodyear)
 
 dfDataC <- dfData[!is.na(dfData$Selenium), ]
 
-pdf(file = "/Users/Blake Loosley/Documents/School/Data Science Internship/Images/Facet_Grid_Selenium.pdf",
+pdf(file = "/Users/Blake Loosley/Documents/School/Data Science Internship/Images/Facet_Grid_Selenium.jpg",
     width = 12,
     height = 8)
 
@@ -57,7 +59,7 @@ dfDataT %>%
   filter(year(date) <= 2014 | year(date) >= 2015) %>%
   ggplot(aes(x = as.Date(date), y = Temp..Celsius, color = ID)) +
     facet_grid(rows = vars(ID)) +
-    geom_line() +
+    geom_point() +
     ylim(10, 45) +
     scale_x_date(date_breaks = "6 months", date_labels = "%b %y") +
     scale_color_viridis_d() +
@@ -68,10 +70,11 @@ dfDataT %>%
 dev.off()
 ```
 
+
 ```{r}
 dfDataT <- dfData[!is.na(dfData$Temp..Celsius), ]
 
-pdf(file = "/Users/Blake Loosley/Documents/School/Data Science Internship/Images/Grid_Temp.pdf",
+pdf(file = "/Users/Blake Loosley/Documents/School/Data Science Internship/Images/Grid_Temp.jpg",
     width = 12,
     height = 8)
 
@@ -88,3 +91,95 @@ dfDataT %>%
 
 dev.off()
 ```
+
+
+```{r}
+pdf(file = "/Users/Blake Loosley/Documents/School/Data Science Internship/Images/Selenium_Boxplot.jpg",
+    width = 12,
+    height = 8)
+
+dfDataC %>%
+  filter(year(date) <= 2014 | year(date) >= 2015) %>%
+  ggplot(aes(x = ID , y = Selenium, group = ID, color = ID)) +
+    geom_boxplot(fill = "grey") +
+    scale_color_manual(values = c(rep("black", 7), "red3")) + 
+    ylab("Selenium (mg/L)") +
+    labs(title = "Selenium Boxplots per Effluent") + 
+    theme(legend.position = "none") # show no legend since x axis covers it
+
+dev.off()
+```
+
+```{r}
+#set periods
+period1End <- ymd( "2012-03-01")
+period2End <- ymd( "2015-01-01")
+period3End <- ymd( "2017-04-01")
+periods <- c(period1End, period2End, period3End)
+
+# Only looking at brine and train 1 (bin1, bin5, bin7)
+drawTrain1FromPeriod <- function(startPeriod, endPeriod, interval_string){
+    resultPlot <- dfDataC %>% 
+        filter(date >= startPeriod & date < endPeriod ) %>% 
+        ggplot(aes(y = Selenium, group = ID, color = ID)) + #aes_string because variable is not actual column factor term, but a name as string.+
+        geom_boxplot() + 
+        scale_color_viridis_d() +
+        ylab("Selenium Content (mg/L)")
+    
+    return(resultPlot) 
+}
+
+#Selenium contents for train 1 for different periods
+#Period 1
+
+pdf(file = "/Users/Blake Loosley/Documents/School/Data Science Internship/Images/Selenium_Boxplot_Period1.jpg",
+    width = 12,
+    height = 8)
+
+plotT1P1 <- drawTrain1FromPeriod(dfDataC$date[1], period1End, "4 months") + 
+    labs(title= "Selenium Content for Period 1")
+plotT1P1
+
+dev.off()
+
+
+
+pdf(file = "/Users/Blake Loosley/Documents/School/Data Science Internship/Images/Selenium_Boxplot_Period2.jpg",
+    width = 12,
+    height = 8)
+
+#Period 2
+plotT1P2 <- drawTrain1FromPeriod(period1End, period2End, "4 months") + 
+    labs(title= "Selenium Content for Period 2")
+plotT1P2
+
+dev.off()
+
+
+
+pdf(file = "/Users/Blake Loosley/Documents/School/Data Science Internship/Images/Selenium_Boxplot_Period3.jpg",
+    width = 12,
+    height = 8)
+
+#Period 3
+plotT1P3 <- drawTrain1FromPeriod(period2End, period3End, "4 months") + 
+    labs(title= "Selenium Content for Period 3")
+plotT1P3
+
+dev.off()
+
+
+
+pdf(file = "/Users/Blake Loosley/Documents/School/Data Science Internship/Images/Selenium_Boxplot_Period4.jpg",
+    width = 12,
+    height = 8)
+
+#Period 4
+plotT1P4 <- drawTrain1FromPeriod(period3End, 
+                                 tail(dfDataC$date, n = 1) + 1, "1 month") + #the tail() +1 is adding one day to the last day in the dataset
+    labs(title= "Selenium Content for Period 4")
+plotT1P4
+
+dev.off()
+```
+
