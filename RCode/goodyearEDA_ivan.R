@@ -304,7 +304,9 @@ ggsave(filename = "Images/Selenium_Boxplot_two_tone.png",
 boxSelTC <- dfDataSel %>% 
     filter(year(date) <= 2014 | year(date) >= 2015) %>%
     ggplot(aes(x = ID , y = Selenium, group = ID, color = ID)) +
-    geom_boxplot(fill = "darkgrey") +
+    geom_boxplot(fill = c("goldenrod4", "darkgreen", "royalblue3", 
+                          "red4", "goldenrod4", "darkgreen", 
+                          "goldenrod4", "black")) +
     scale_color_manual(values = c("goldenrod4", "darkgreen", "royalblue3", 
                                   "red4", "goldenrod4", "darkgreen", 
                                   "goldenrod4", "black")) + 
