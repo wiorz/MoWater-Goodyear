@@ -6,13 +6,14 @@ ls()
 library( lubridate)
 library( viridis)
 library( scales)
+library( ggpubr)
 library( tidyverse); theme_set(theme_minimal())
     theme_update(panel.grid.minor = element_blank())
 suppressMessages(library( fields))
 
 #head(goodyear)
 
-# Prep for matching size first! Some bins have anextra line of NA, row num 
+# Prep for matching size if needed! Some bins have an extra line of NA, row num 
 # should be 438.
 # Bins with extra rows: bin1, bin2, bin3, bin6
 Bin1 <- Bin1[1:nrow(Bin1) - 1, ]
@@ -232,15 +233,7 @@ plotT4vBrine <- GGPTrain4VSBrine(dfDataSel, "4 months", "Selenium")
 plotT4vBrine
 
 #---------------------------------------------------
-
-#Selenium contents for individual bins
-#Focus: 
-#Period 1
-
-
-
-#--------------------------------------
-#Netflow test
+#Netflow vs Selenium linear relation check
 
 #cleaning inflow and outflow
 dfDataSelFlow <- dfDataSel[!is.na(dfDataSel$Inflow), ]
@@ -275,6 +268,28 @@ dfDataSelFlow %>%
 
 #----------------------------------------------
 
+#Exploring DO.mg.L relationship with Selenium
+
+dfDataSel %>% 
+    ggplot()
 
 
-#-----------------------------------
+
+#----------------------------------------------
+
+#Selenium contents for individual bins
+#Focus: bin 3
+#Reason: bin3 is our baseline
+#Period 1
+b3p1
+
+
+
+
+
+
+
+
+
+
+#--------------------------------------
