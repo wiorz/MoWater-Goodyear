@@ -122,7 +122,7 @@ GGPTrain1VSBrine <- function(dataset, interval_string, chemical)
         filter(date >= trainChangeDate) %>% 
         #aes_string because variable is not actual column factor term, but a name as string.
         ggplot(aes_string(x = "date", y = chemical, group = "ID", color = "ID")) + 
-        geom_point(size = 2.5) +  
+        geom_point(alpha = 0.7, size = 3) +  
         geom_line(aes(y = 0.002), color = "red", alpha = 0.5) +
         scale_x_date(date_breaks = interval_string, date_labels = "%b%Y") +
         scale_color_brewer(palette = "Dark2") + 
@@ -152,13 +152,30 @@ GGPTrain2VSBrine <- function(dataset, interval_string, chemical)
         filter(ID == "Bin2" | ID == "Bin6" | ID == "brine") %>% 
         filter(date >= trainChangeDate) %>%
         ggplot(aes_string(x = "date", y = chemical, group = "ID", color = "ID")) + 
-        geom_point(size = 2.5) +  
+        geom_point(alpha = 0.7, size = 3) +  
         geom_line(aes(y = 0.002), color = "red", alpha = 0.5) +
         scale_x_date(date_breaks = interval_string, date_labels = "%b %Y") +
         scale_color_brewer(palette = "Dark2") +  
         xlab("Date") + 
         ylab("Selenium Content (mg/L)") +
-        labs(title= "Selenium content of Train 2 for period after train change")
+        labs(title= "Selenium content of Train 2 for period after train change") + 
+        geom_vline(xintercept = bin1567Period1End, color = "#D95F02", linetype = "dashed") + 
+        geom_vline(xintercept = bin1567Period2End, color = "#222222" ) + 
+        geom_vline(xintercept = bin1567Period3End, color = "#222222") + 
+        annotate("text", label = "B6A", x = bin1567Period1End - 80, y = 0.2, 
+                 size = 8, colour = "#D95F02") + 
+        annotate("text", label = "B6B", x = bin1567Period2End - 80, y = 0.2, 
+                 size = 8, colour = "#D95F02") + 
+        annotate("text", label = "B6C", x = bin1567Period3End - 80, y = 0.2, 
+                 size = 8, colour = "#D95F02") + 
+        annotate("text", label = "B6D", x = lastDate, y = 0.2, 
+                 size = 8, colour = "#D95F02") + 
+        annotate("text", label = "B2A", x = bin2Period1End - 80, y = 0.145, 
+                 size = 8, colour = "#1B9E77") + 
+        annotate("text", label = "B2B", x = bin2Period2End - 80, y = 0.145, 
+                 size = 8, colour = "#1B9E77") + 
+        annotate("text", label = "B2C", x = lastDate, y = 0.145, 
+                 size = 8, colour = "#1B9E77")
     
     return(resultPlot) 
 }
@@ -169,7 +186,7 @@ GGPTrain3VSBrine <- function(dataset, interval_string, chemical)
         filter(ID == "Bin4" | ID == "brine") %>% 
         filter(date >= trainChangeDate) %>%
         ggplot(aes_string(x = "date", y = chemical, group = "ID", color = "ID")) + 
-        geom_point(size = 2.5) +  
+        geom_point(alpha = 0.7, size = 3) +  
         geom_line(aes(y = 0.002), color = "red", alpha = 0.5) +
         scale_x_date(date_breaks = interval_string, date_labels = "%b %Y") +
         scale_color_brewer(palette = "Dark2") + 
@@ -195,7 +212,7 @@ GGPTrain4VSBrine <- function(dataset, interval_string, chemical)
         filter(ID == "Bin3" | ID == "brine") %>% 
         filter(date >= trainChangeDate) %>%
         ggplot(aes_string(x = "date", y = chemical, group = "ID", color = "ID")) + 
-        geom_point(size = 2.5) +  
+        geom_point(alpha = 0.7, size = 3) +  
         geom_line(aes(y = 0.002), color = "red", alpha = 0.5) +
         scale_x_date(date_breaks = interval_string, date_labels = "%b %Y") +
         scale_color_brewer(palette = "Dark2") + 
@@ -237,9 +254,17 @@ DrawGrid2x2 <- function(plot1, plot2, plot3, plot4)
 
 #Selenium contents for train 1 for different periods
 plotT1vBrine <- GGPTrain1VSBrine(dfDataSel, "4 months", "Selenium")
-plotT1vBrine
+plotT1vBrine 
 ggsave(filename = "Images/Train 1 Selenium vs Brine.png", 
        plotT1vBrine,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+#log ver
+plotT1vBrineLog <- plotT1vBrine + 
+    scale_y_continuous(trans = 'log10') + 
+    labs(title= "Log of Selenium of Train 1 for period after train change")
+plotT1vBrineLog
+ggsave(filename = "Images/Train 1 Selenium vs Brine in log.png", 
+       plotT1vBrineLog,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
 #Train2
@@ -248,12 +273,28 @@ plotT2vBrine
 ggsave(filename = "Images/Train 2 Selenium vs Brine.png", 
        plotT2vBrine,
        width = 42.3, height = 23.15, units = "cm", device='png')
+#log ver
+plotT2vBrineLog <- plotT2vBrine + 
+    scale_y_continuous(trans = 'log10') + 
+    labs(title= "Log of Selenium of Train 2 for period after train change")
+plotT2vBrineLog
+ggsave(filename = "Images/Train 2 Selenium vs Brine in log.png", 
+       plotT2vBrineLog,
+       width = 42.3, height = 23.15, units = "cm", device='png')
 
 #Train3
 plotT3vBrine <- GGPTrain3VSBrine(dfDataSel, "4 months", "Selenium")
 plotT3vBrine
 ggsave(filename = "Images/Train 3 Selenium vs Brine.png", 
        plotT3vBrine,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+#log ver
+plotT3vBrineLog <- plotT3vBrine + 
+    scale_y_continuous(trans = 'log10') + 
+    labs(title= "Log of Selenium of Train 3 for period after train change")
+plotT3vBrineLog
+ggsave(filename = "Images/Train 3 Selenium vs Brine in log.png", 
+       plotT3vBrineLog,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
 #Train 4
@@ -262,9 +303,17 @@ plotT4vBrine
 ggsave(filename = "Images/Train 4 Selenium vs Brine.png", 
        plotT4vBrine,
        width = 42.3, height = 23.15, units = "cm", device='png')
+#log ver
+plotT4vBrineLog <- plotT4vBrine + 
+    scale_y_continuous(trans = 'log10') + 
+    labs(title= "Log of Selenium of Train 4 for period after train change")
+plotT4vBrineLog
+ggsave(filename = "Images/Train 4 Selenium vs Brine in log.png", 
+       plotT4vBrineLog,
+       width = 42.3, height = 23.15, units = "cm", device='png')
 
 #---------------------------------------------------
-#Netflow vs Selenium linear regression check
+#Net Selenium linear regression check
 
 #cleaning inflow and outflow
 dfDataSelFlow <- dfDataSel[!is.na(dfDataSel$Inflow), ]
@@ -309,7 +358,7 @@ boxSel2t <- dfDataSel %>%
     scale_color_manual(values = c(rep("black", 7), "red3")) + 
     ylab("Selenium (mg/L)") +
     labs(title = "Selenium Boxplots per Effluent") + 
-    theme(legend.position = "none")
+    theme(legend.position = "none", axis.text=element_text(size=14))
 
 boxSel2t
 
@@ -321,13 +370,13 @@ ggsave(filename = "Images/Selenium_Boxplot_two_tone.png",
 boxSelTC <- dfDataSel %>% 
     filter(year(date) <= 2014 | year(date) >= 2015) %>%
     ggplot(aes(x = ID , y = Selenium, group = ID, color = ID)) +
-    geom_boxplot(fill = c("goldenrod4", "darkgreen", "royalblue3", 
-                          "red4", "goldenrod4", "darkgreen", 
-                          "goldenrod4", "black")) +
+    geom_boxplot(fill = c("#D95F02", "darkgreen", "royalblue3", 
+                          "red4", "#D95F02", "darkgreen", 
+                          "#D95F02", "black")) +
     scale_color_manual(values = c(rep("black", 7), "darkgrey")) + 
     ylab("Selenium (mg/L)") +
-    labs(title = "Selenium Boxplots per Effluent") + 
-    theme(legend.position = "none")
+    labs(title= "Boxplot: Selenium by Effluent") +
+    theme(legend.position = "none", axis.text=element_text(size=14))
 
 boxSelTC
 
@@ -337,22 +386,129 @@ ggsave(filename = "Images/Selenium_Boxplot_train_color.png",
 
 #conclusion: bin2, bin3 (baseline),bin4 and bin 6
 
+#log ver
+#log ver
+boxSelTCLog <- boxSelTC + scale_y_continuous(trans = 'log10') + 
+    labs(title= "Boxplot: Log of Selenium by Effluent")
+boxSelTCLog
+ggsave(filename = "Images/Selenium_Boxplot_train_color_log.png", 
+       boxSelTCLog,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
 #-----------------------------------------------
 
-#Exploring DO and carbon linear regression with Selenium
+#Exploring linear regression with Selenium vs COD
+
+#All Bins filtered out outlier
+plotSelvCODBA <- dfDataSel %>% 
+    ggplot(aes(COD, Selenium)) + 
+    geom_point(alpha = 0.75, aes(color = ID), size = 3) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    scale_color_brewer(palette = "Dark2") + 
+    xlab("COD") +
+    ylab("selenium mg/L") + 
+    labs(title= "Log of Selenium vs COD lin. reg. of All Bins All Periods") + 
+    scale_x_continuous(trans = "log10") + 
+    scale_y_continuous(trans = "log10")
+plotSelvCODBA
+ggsave(filename = "Images/Selenium vs COD linear regression All Bins Period All.png", 
+       plotSelvCODBA,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#All Bins last period
+plotSelvCODBAPL <- dfDataSel %>% 
+    filter(date >= bin1567Period3End) %>% 
+    ggplot(aes(COD, Selenium)) + 
+    geom_point(alpha = 0.75, aes(color = ID), size = 3) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    scale_color_brewer(palette = "Dark2") + 
+    xlab("COD") +
+    ylab("selenium mg/L") + 
+    labs(title= "Log of Selenium vs COD lin. reg. of All Bins Carbon Dosing Period") + 
+    scale_x_continuous(trans = "log10") + 
+    scale_y_continuous(trans = "log10") 
+plotSelvCODBAPL
+ggsave(filename = "Images/Selenium vs COD linear regression All Bins Carbon Dosing Period.png", 
+       plotSelvCODBAPL,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#All bins all periods vs last period only
+plotSelvCODBAPvP <- ggarrange(plotSelvCODBA, plotSelvCODBAPL, nrow = 2, 
+                             common.legend = TRUE)
+plotSelvCODBAPvP
+ggsave(filename = "Images/Selenium vs COD linear regression All Bins All Period vs Carbon Dosing.png", 
+       plotSelvCODBAPvP,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Bin1 All periods
+plotSelvCODB1 <- dfDataSel %>% 
+    filter(ID == "Bin1") %>% 
+    ggplot(aes(COD, Selenium)) + 
+    geom_point(alpha = 0.65, size = 2.5, aes(color = ID)) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    xlab("COD") +
+    ylab("selenium mg/L") + 
+    labs(title= "Selenium vs COD lin. reg. of Bin1 All Periods") + 
+    scale_x_continuous(trans = "log10") + 
+    scale_y_continuous(trans = "log10")
+plotSelvCODB1
+ggsave(filename = "Images/Selenium vs COD linear regression Bin1 Period All.png", 
+       plotSelvCODB1,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Bin2 All periods
+plotSelvCODB2 <- dfDataSel %>% 
+    filter(ID == "Bin2") %>% 
+    ggplot(aes(COD, Selenium)) + 
+    geom_point(alpha = 0.65, size = 2.5, aes(color = ID)) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    scale_color_brewer(palette = "Dark2") +
+    xlab("COD") +
+    ylab("selenium mg/L") + 
+    labs(title= "Selenium vs COD lin. reg. of Bin2 All Periods") + 
+    scale_x_continuous(trans = "log10") + 
+    scale_y_continuous(trans = "log10")
+plotSelvCODB2
+ggsave(filename = "Images/Selenium vs COD linear regression Bin2 Period All.png", 
+       plotSelvCODB2,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Bin2 unscale
+plotSelvCODB2un <- dfDataSel %>% 
+    filter(ID == "Bin2") %>% 
+    ggplot(aes(COD, Selenium)) + 
+    geom_point(alpha = 0.65, size = 2.5, aes(color = ID)) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    scale_color_brewer(palette = "Dark2") +
+    xlab("COD") +
+    ylab("selenium mg/L") + 
+    labs(title= "Selenium vs COD lin. reg. of Bin2 All Periods non-scale")
+plotSelvCODB2un
+ggsave(filename = "Images/Selenium vs COD linear regression Bin2 Period All non-scale.png", 
+       plotSelvCODB2un,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Bin1 vs Bin2 all periods
+plotSelvCODB1vB2AP <- ggarrange(plotSelvCODB1, plotSelvCODB2, nrow = 2, 
+                              common.legend = FALSE)
+plotSelvCODB1vB2AP
+ggsave(filename = "Images/Selenium vs COD linear regression Bin1 vs Bin2 All Periods.png", 
+       plotSelvCODB1vB2AP,
+       width = 42.3, height = 23.15, units = "cm", device='png')
 
 #Bin1 period D
 plotSelvCODB1P4 <- dfDataSel %>% 
     filter(ID == "Bin1" & date >= bin1567Period3End ) %>% 
     ggplot(aes(COD, Selenium)) + 
-    geom_point(alpha = 1, aes(color = ID)) +
+    geom_point(alpha = 1, size = 3.5, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
-    scale_color_brewer(palette = "Dark2") + 
     xlab("COD") +
     ylab("selenium mg/L") + 
-    labs(title= "Selenium vs COD lin. reg. of Bin1 Period D")
+    labs(title= "Selenium vs COD lin. reg. of Bin1 Carbon Dosing Period") + 
+    scale_x_continuous(trans = "log10") + 
+    scale_y_continuous(trans = "log10")
 plotSelvCODB1P4
-ggsave(filename = "Images/Selenium vs COD linear regression Bin1 Period D.png", 
+ggsave(filename = "Images/Selenium vs COD linear regression Bin1 Carbon Dosing Period.png", 
        plotSelvCODB1P4,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
@@ -361,13 +517,16 @@ plotSelvCODB2P3 <- dfDataSel %>%
     filter(ID == "Bin2") %>% 
     filter(date >= bin2Period2End) %>% 
     ggplot(aes(COD, Selenium))+ 
-    geom_point(alpha = 1, aes(color = ID)) +
+    geom_point(alpha = 1, size = 3.5, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
+    scale_color_brewer(palette = "Dark2") +
     xlab("COD") +
     ylab("selenium mg/L") + 
-    labs(title= "Selenium vs COD lin. reg. for Bin2 Period C")
+    labs(title= "Selenium vs COD lin. reg. for Bin2 Carbon Dosing Period") + 
+    scale_x_continuous(trans = "log10") + 
+    scale_y_continuous(trans = "log10")
 plotSelvCODB2P3
-ggsave(filename = "Images/Selenium vs COD linear regression Bin2 Period C.png", 
+ggsave(filename = "Images/Selenium vs COD linear regression Bin2 Carbon Dosing Period.png", 
        plotSelvCODB2P3,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
@@ -375,9 +534,12 @@ ggsave(filename = "Images/Selenium vs COD linear regression Bin2 Period C.png",
 plotSelvCODB1B2 <- ggarrange(plotSelvCODB1P4, plotSelvCODB2P3, nrow=2, 
                              common.legend = FALSE)
 plotSelvCODB1B2
-ggsave(filename = "Images/Selenium vs COD linear regression Bin 1 vs Bin2.png", 
-       plotSelcCODB1B2,
+ggsave(filename = "Images/Selenium vs COD linear regression Bin 1 vs Bin2 Carbon Dosing.png", 
+       plotSelvCODB1B2,
        width = 42.3, height = 23.15, units = "cm", device='png')
+
+#---------------------------------------
+#Maybe do more DO?
 
 #Focus look at Bin2 DO on last period when carbon dosing happens
 plotSelvDOB2P3 <- dfDataSel %>% 
@@ -438,10 +600,19 @@ binsTTest <- dfDataSel %>%
 binsTTest
 
 
-
-
-
-
+#-----------------------------------------------
+#density
+plotSelDen <- dfDataSel %>% 
+    filter(Selenium <= 0.15) %>% 
+    ggplot(aes(Selenium, color =ID)) +
+    geom_density(size = 1.5) +
+    scale_color_brewer(palette = "Dark2") + 
+    labs(title = "Selenium level distribution, cutoff level <= 0.15") + 
+    theme(axis.text=element_text(size=14))
+plotSelDen
+ggsave(filename = "Images/Selenium Level Distribution with cutoff.png", 
+       plotSelDen,
+       width = 42.3, height = 23.15, units = "cm", device='png')
 
 
 
