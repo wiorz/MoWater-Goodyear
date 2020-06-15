@@ -7,9 +7,11 @@ library( lubridate)
 library( rcartocolor)
 library( RColorBrewer)
 library( scales)
-library( ggpubr)
+library( rstatix)
+library( dplyr)
 library( tidyverse); theme_set(theme_minimal())
 theme_update(panel.grid.minor = element_blank())
+library( ggpubr)
 suppressMessages(library( fields))
 
 #head(goodyear)
@@ -68,6 +70,21 @@ bin34Periods <- c(bin34Period1End, bin34Period2End)
 
 #---------------------------------------------
 #Set functions here
+
+#NOTE: Do NOT use this! this function doesn't work yet!
+#Description: perform t-test on a column of each bin (including brine).
+#Return: the object of t-test results
+#Assumptions: the column name exists in the dataset.
+#i.e.: VarTTestForIDs(dfDataSel, Selenium)
+#       gives the t-test result of Selenium by the ID group for dfDataSel
+VarTTestForIDs <- function(dataset, target)
+{
+    result <- dataset %>% 
+        t_test(target ~ ID) %>%
+        add_significance()
+    return(result)
+}
+
 
 # Description: compare varX to varY for the targeted influent and effluent data, 
 #   with specified start and stop period.
@@ -304,10 +321,10 @@ ggsave(filename = "Images/Selenium_Boxplot_two_tone.png",
 boxSelTC <- dfDataSel %>% 
     filter(year(date) <= 2014 | year(date) >= 2015) %>%
     ggplot(aes(x = ID , y = Selenium, group = ID, color = ID)) +
-    geom_boxplot(fill = "darkgrey") +
-    scale_color_manual(values = c("goldenrod4", "darkgreen", "royalblue3", 
-                                  "red4", "goldenrod4", "darkgreen", 
-                                  "goldenrod4", "black")) + 
+    geom_boxplot(fill = c("goldenrod4", "darkgreen", "royalblue3", 
+                          "red4", "goldenrod4", "darkgreen", 
+                          "goldenrod4", "black")) +
+    scale_color_manual(values = c(rep("black", 7), "darkgrey")) + 
     ylab("Selenium (mg/L)") +
     labs(title = "Selenium Boxplots per Effluent") + 
     theme(legend.position = "none")
@@ -412,7 +429,13 @@ ggsave(filename = "Images/Selenium vs COD linear regression Bin1 Period A.png",
 #Reason: bin3 is our baseline
 #Period 1
 
+#-----------------------------------------------
+#t-test
 
+binsTTest <- dfDataSel %>% 
+    t_test(Selenium ~ ID) %>%
+    add_significance()
+binsTTest
 
 
 
