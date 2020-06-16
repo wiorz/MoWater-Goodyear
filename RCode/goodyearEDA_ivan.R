@@ -86,7 +86,7 @@ lowBrineSel <- dfDataSt %>%
     slice(which.min(Selenium))
 dfDataSt <- filter(dfDataSt, date != lowBrineSel$date)
 
-#lean data with mainly selenium 
+#lean data with mainly relevant variables 
 dfDataStLn <- dfDataSt %>% 
                 select(ID, date, TDS, Selenium, Copper, Nitrate, Phosphorus, 
                        COD, DOC, DO.mg.L, pH, Temp..Celsius, Inflow, Outflow)
@@ -94,7 +94,7 @@ dfDataStLn <- dfDataSt %>%
 #Data with Selenium focus, removing all NA rows from Selenium
 dfDataSel <- dfDataStLn[!is.na(dfDataStLn$Selenium), ]
 
-
+save(dfDataSel, dfDataStLn, file = "clean/cleanedObjects.rda")
 
 
 #---------------------------------------------
@@ -422,9 +422,6 @@ ggsave(filename = "Images/Selenium_Boxplot_train_color.png",
        boxSelTC,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
-#conclusion: bin2, bin3 (baseline),bin4 and bin 6
-
-#log ver
 #log ver
 boxSelTCLog <- boxSelTC + scale_y_continuous(trans = 'log10') + 
     labs(title= "Boxplot: Log of Selenium by Effluent")
@@ -432,6 +429,37 @@ boxSelTCLog
 ggsave(filename = "Images/Selenium_Boxplot_train_color_log.png", 
        boxSelTCLog,
        width = 42.3, height = 23.15, units = "cm", device='png')
+
+#different boxplot grouped by train type
+dfTest <- dfDataSel
+dfTest$ID <- factor(dfTest$ID , levels=c("Bin1", "Bin5", "Bin7", "Bin2", 
+                                         "Bin6", "Bin4", "Bin3", "brine"))
+
+boxSelTCGroup <- dfTest %>%
+    ggplot(aes(x = ID, y = Selenium)) +
+    geom_boxplot(fill = c("#D95F02", "#D95F02", "#D95F02", 
+                                  "darkgreen", "darkgreen", "royalblue3", 
+                                  "red3", "black")) +
+    xlab("Train Type") +
+    ylab("Selenium Content (mg/L)") +
+    labs(title= "Boxplot: Selenium by Effluent by Train") +
+    theme(legend.position = "none", axis.text=element_text(size=14))
+
+boxSelTCGroup
+
+ggsave(filename = "Images/Selenium_Boxplot_train_color_group.png", 
+       boxSelTCGroup,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#log ver
+boxSelTCGroupLog <- boxSelTCGroup + scale_y_continuous(trans = 'log10') + 
+    labs(title= "Boxplot: Log of Selenium by Effluent by train type")
+boxSelTCGroupLog
+ggsave(filename = "Images/Selenium_Boxplot_train_color_group_log.png", 
+       boxSelTCGroupLog,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+
 
 #-----------------------------------------------
 
@@ -643,7 +671,6 @@ binsTTest
 #-----------------------------------------------
 #density
 plotSelDen <- dfDataSel %>% 
-    filter(Selenium <= 0.15) %>% 
     ggplot(aes(Selenium, color =ID)) +
     geom_density(size = 1.5) +
     scale_color_brewer(palette = "Dark2") + 
