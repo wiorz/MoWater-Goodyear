@@ -3,38 +3,18 @@
 setwd("Baylor/MoWater/proj6/MoWater-Goodyear")
 load("clean/goodyearMoWater.rda" )
 ls()
+library( tidyverse); theme_set(theme_minimal())
+theme_update(panel.grid.minor = element_blank())
 library( lubridate)
 library( rcartocolor)
 library( RColorBrewer)
 library( scales)
 library( rstatix)
 library( dplyr)
-library( tidyverse); theme_set(theme_minimal())
-theme_update(panel.grid.minor = element_blank())
 library( ggpubr)
 suppressMessages(library( fields))
 
 #head(goodyear)
-
-# Prep for matching size if needed! Some bins have an extra line of NA, row num 
-# should be 438.
-# Bins with extra rows: bin1, bin2, bin3, bin6
-Bin1 <- Bin1[1:nrow(Bin1) - 1, ]
-Bin2 <- Bin2[1:nrow(Bin1) - 1, ]
-Bin3 <- Bin3[1:nrow(Bin1) - 1, ]
-Bin6 <- Bin6[1:nrow(Bin1) - 1, ]
-
-dfData <- dfData[!(is.na(dfData$date)), ] # also clean goodyear here
-
-dfData <- as_tibble(goodyear)
-
-#Data with Selenium focus, removing all NA rows from Selenium
-dfDataSel <- dfData[!is.na(dfData$Selenium), ]
-#Data with Arsenic focus
-dfDataAr <- dfData[!is.na(dfData$Arsenic), ]
-#Data with Chronium focus
-dfDataChr <- dfData[!is.na(dfData$Chromium), ]
-
 
 #------------------------------------------------------
 
@@ -46,6 +26,10 @@ trainChangeDate <- ymd( "2011-06-15")
 #last date for shortcut, the +1 is for adapting to use with functions due to the
 #   comparison (< lastdate).
 lastDate <- tail(dfDataSel$date, n = 1) + 1
+
+#unstable periods
+unstablePeriodStart <- ymd( "2014-04-01")
+unstablePeriodEnd <- ymd( "2016-01-01") #rough est. according to Kate (stakeholder)
 
 #Note: 2015-04-01 may be set to 2015-01-01 because the data doesn't look right.
 #There's a spike in data around Jan 2015 that should be grouped with the next 
@@ -67,6 +51,51 @@ bin2Periods <- c(bin2Period1End, bin2Period2End)
 bin34Period1End <- ymd( "2015-04-01")
 bin34Period2End <- ymd( "2016-12-01")
 bin34Periods <- c(bin34Period1End, bin34Period2End)
+
+#Outliers to be removed, bad data points!
+# maybe  use c() so we can add more dates later
+removeDates <- ymd("2011-07-22")
+
+#----------------------------------------
+
+# Prep for matching size if needed! Some bins have an extra line of NA, row num 
+# should be 438.
+# Bins with extra rows: bin1, bin2, bin3, bin6
+Bin1 <- Bin1[1:nrow(Bin1) - 1, ]
+Bin2 <- Bin2[1:nrow(Bin1) - 1, ]
+Bin3 <- Bin3[1:nrow(Bin1) - 1, ]
+Bin6 <- Bin6[1:nrow(Bin1) - 1, ]
+
+dfData <- dfData[!(is.na(dfData$date)), ] # also clean goodyear here
+
+dfData <- as_tibble(goodyear)
+
+#With data from only stable periods
+dfDataSt <- dfData %>% 
+                filter( date >= trainChangeDate & 
+                            date <= unstablePeriodStart |
+                            date >= unstablePeriodEnd) 
+
+#Remove the confirmed outliers
+#Can also use subset(): i.e. subset(df, B != )
+dfDataSt <- filter(dfDataSt, date != removeDates)
+
+#Identity and remove the row with very low selenium from brine
+lowBrineSel <- dfDataSt %>% 
+    filter(ID == "brine") %>% 
+    slice(which.min(Selenium))
+dfDataSt <- filter(dfDataSt, date != lowBrineSel$date)
+
+#lean data with mainly selenium 
+dfDataStLn <- dfDataSt %>% 
+                select(ID, date, TDS, Selenium, Copper, Nitrate, Phosphorus, 
+                       COD, DOC, DO.mg.L, pH, Temp..Celsius, Inflow, Outflow)
+
+#Data with Selenium focus, removing all NA rows from Selenium
+dfDataSel <- dfDataStLn[!is.na(dfDataStLn$Selenium), ]
+
+
+
 
 #---------------------------------------------
 #Set functions here
@@ -303,6 +332,7 @@ plotT4vBrine
 ggsave(filename = "Images/Train 4 Selenium vs Brine.png", 
        plotT4vBrine,
        width = 42.3, height = 23.15, units = "cm", device='png')
+
 #log ver
 plotT4vBrineLog <- plotT4vBrine + 
     scale_y_continuous(trans = 'log10') + 
@@ -349,6 +379,14 @@ dfDataSelFlow %>%
     labs(title= "Selenium vs netflow RA for Train 4")
 
 #----------------------------------------------
+
+#reordering boxplot
+# data$names <- factor(data$names , levels=c("A", "D", "C", "B"))
+# 
+# #The plot is now ordered !
+# boxplot(data$value ~ data$names , col=rgb(0.3,0.5,0.4,0.6) , ylab="value" , 
+#        xlab="names in desired order")
+
 
 #boxplot on bons to see which bins to use - 2 tone color
 boxSel2t <- dfDataSel %>% 
@@ -399,8 +437,9 @@ ggsave(filename = "Images/Selenium_Boxplot_train_color_log.png",
 
 #Exploring linear regression with Selenium vs COD
 
-#All Bins filtered out outlier
+#All Bins filtered out outlier, exclude brine!
 plotSelvCODBA <- dfDataSel %>% 
+    filter(ID != "brine") %>% 
     ggplot(aes(COD, Selenium)) + 
     geom_point(alpha = 0.75, aes(color = ID), size = 3) +
     geom_smooth(formula = y~x, method = "lm") + 
@@ -417,6 +456,7 @@ ggsave(filename = "Images/Selenium vs COD linear regression All Bins Period All.
 
 #All Bins last period
 plotSelvCODBAPL <- dfDataSel %>% 
+    filter(ID != "brine") %>% 
     filter(date >= bin1567Period3End) %>% 
     ggplot(aes(COD, Selenium)) + 
     geom_point(alpha = 0.75, aes(color = ID), size = 3) +
