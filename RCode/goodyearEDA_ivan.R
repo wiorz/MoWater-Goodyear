@@ -796,14 +796,31 @@ GGPSelVSVarByYear<- function(dataset, target){
 plotSelvNit <- GGPSelVSVarByYear(dfDataSel, "Nitrate")
 plotSelvNit + xlab("Nitrate mg/L") +
     labs(title = "Nitrate vs Selenium")
+ggsave(filename = "Images/Yearly Comparison Selenium vs Nitrate.png", 
+       plotSelvNit,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Arsenic
+plotSelvArs <- GGPSelVSVarByYear(dfDataSel, "Arsenic")
+plotSelvArs + xlab("Arsenic mg/L") +
+    labs(title = "Arsenic vs Selenium")
+ggsave(filename = "Images/Yearly Comparison Selenium vs Arsenic.png", 
+       plotSelvArs,
+       width = 42.3, height = 23.15, units = "cm", device='png')
 
 plotSelvCOD <- GGPSelVSVarByYear(dfDataSel, "COD")
 plotSelvCOD + xlab("COD mg/L") +
     labs(title = "COD vs Selenium")
+ggsave(filename = "Images/Yearly Comparison Selenium vs COD.png", 
+       plotSelvCOD,
+       width = 42.3, height = 23.15, units = "cm", device='png')
 
 plotSelvpH <- GGPSelVSVarByYear(dfDataSel, "pH")
 plotSelvpH + xlab("pH") +
     labs(title = "pH vs Selenium")
+ggsave(filename = "Images/Yearly Comparison Selenium vs pH.png", 
+       plotSelvpH,
+       width = 42.3, height = 23.15, units = "cm", device='png')
 
 #TODO: clean out outlier in 2012
 #Not much on phosphorus
@@ -826,10 +843,6 @@ plotSelvTDS + xlab("TDS mg/L") +
     labs(title = "TDS vs Selenium")
 
 #-more columns
-#Arsenic
-plotSelvArs <- GGPSelVSVarByYear(dfDataSt, "Arsenic")
-plotSelvArs + xlab("Arsenic mg/L") +
-    labs(title = "Arsenic vs Selenium")
 
 #Sulfate
 plotSelvSulfa <- GGPSelVSVarByYear(dfDataSt, "Sulfate")
