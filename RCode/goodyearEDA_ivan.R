@@ -1,7 +1,7 @@
 
 
 setwd("Baylor/MoWater/proj6/MoWater-Goodyear")
-load("clean/goodyearMoWater.rda" )
+load("clean/goodyearMoWater0.rda" )
 ls()
 library( tidyverse); theme_set(theme_minimal())
 theme_update(panel.grid.minor = element_blank())
