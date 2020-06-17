@@ -760,3 +760,10 @@ mods
 #store the coeffcient of lm results
 coefMat <- lapply( mods, coef)
 coefMat
+
+#store the r-squaredvalues
+rssMat <- lapply( mods, "[[", "r.squared")
+rssMat
+
+save(mods, coefMat, rssMat, file = "clean/lmResults.rda")
+
