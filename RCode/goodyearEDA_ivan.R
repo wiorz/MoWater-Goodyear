@@ -1,40 +1,20 @@
 
 
 setwd("Baylor/MoWater/proj6/MoWater-Goodyear")
-load("clean/goodyearMoWater.rda" )
+load("clean/goodyearMoWater0.rda" )
 ls()
+library( tidyverse); theme_set(theme_minimal())
+theme_update(panel.grid.minor = element_blank())
 library( lubridate)
 library( rcartocolor)
 library( RColorBrewer)
 library( scales)
 library( rstatix)
 library( dplyr)
-library( tidyverse); theme_set(theme_minimal())
-theme_update(panel.grid.minor = element_blank())
 library( ggpubr)
 suppressMessages(library( fields))
 
 #head(goodyear)
-
-# Prep for matching size if needed! Some bins have an extra line of NA, row num 
-# should be 438.
-# Bins with extra rows: bin1, bin2, bin3, bin6
-Bin1 <- Bin1[1:nrow(Bin1) - 1, ]
-Bin2 <- Bin2[1:nrow(Bin1) - 1, ]
-Bin3 <- Bin3[1:nrow(Bin1) - 1, ]
-Bin6 <- Bin6[1:nrow(Bin1) - 1, ]
-
-dfData <- dfData[!(is.na(dfData$date)), ] # also clean goodyear here
-
-dfData <- as_tibble(goodyear)
-
-#Data with Selenium focus, removing all NA rows from Selenium
-dfDataSel <- dfData[!is.na(dfData$Selenium), ]
-#Data with Arsenic focus
-dfDataAr <- dfData[!is.na(dfData$Arsenic), ]
-#Data with Chronium focus
-dfDataChr <- dfData[!is.na(dfData$Chromium), ]
-
 
 #------------------------------------------------------
 
@@ -46,6 +26,10 @@ trainChangeDate <- ymd( "2011-06-15")
 #last date for shortcut, the +1 is for adapting to use with functions due to the
 #   comparison (< lastdate).
 lastDate <- tail(dfDataSel$date, n = 1) + 1
+
+#unstable periods
+unstablePeriodStart <- ymd( "2014-04-01")
+unstablePeriodEnd <- ymd( "2016-01-01") #rough est. according to Kate (stakeholder)
 
 #Note: 2015-04-01 may be set to 2015-01-01 because the data doesn't look right.
 #There's a spike in data around Jan 2015 that should be grouped with the next 
@@ -67,6 +51,51 @@ bin2Periods <- c(bin2Period1End, bin2Period2End)
 bin34Period1End <- ymd( "2015-04-01")
 bin34Period2End <- ymd( "2016-12-01")
 bin34Periods <- c(bin34Period1End, bin34Period2End)
+
+#Outliers to be removed, bad data points!
+# maybe  use c() so we can add more dates later
+removeDates <- ymd("2011-07-22")
+
+#----------------------------------------
+
+# Prep for matching size if needed! Some bins have an extra line of NA, row num 
+# should be 438.
+# Bins with extra rows: bin1, bin2, bin3, bin6
+Bin1 <- Bin1[1:nrow(Bin1) - 1, ]
+Bin2 <- Bin2[1:nrow(Bin1) - 1, ]
+Bin3 <- Bin3[1:nrow(Bin1) - 1, ]
+Bin6 <- Bin6[1:nrow(Bin1) - 1, ]
+
+dfData <- dfData[!(is.na(dfData$date)), ] # also clean goodyear here
+
+dfData <- as_tibble(goodyear)
+
+#With data from only stable periods
+dfDataSt <- dfData %>% 
+                filter( date >= trainChangeDate & 
+                            date <= unstablePeriodStart |
+                            date >= unstablePeriodEnd) 
+
+#Remove the confirmed outliers
+#Can also use subset(): i.e. subset(df, B != )
+dfDataSt <- filter(dfDataSt, date != removeDates)
+
+#Identity and remove the row with very low selenium from brine
+lowBrineSel <- dfDataSt %>% 
+    filter(ID == "brine") %>% 
+    slice(which.min(Selenium))
+dfDataSt <- filter(dfDataSt, date != lowBrineSel$date)
+
+#lean data with mainly relevant variables 
+dfDataStLn <- dfDataSt %>% 
+                select(ID, date, TDS, Selenium, Copper, Nitrate, Phosphorus, 
+                       COD, DOC, DO.mg.L, pH, Temp..Celsius, Inflow, Outflow)
+
+#Data with Selenium focus, removing all NA rows from Selenium
+dfDataSel <- dfDataStLn[!is.na(dfDataStLn$Selenium), ]
+
+save(dfDataSel, dfDataStLn, file = "clean/cleanedObjects.rda")
+
 
 #---------------------------------------------
 #Set functions here
@@ -303,6 +332,7 @@ plotT4vBrine
 ggsave(filename = "Images/Train 4 Selenium vs Brine.png", 
        plotT4vBrine,
        width = 42.3, height = 23.15, units = "cm", device='png')
+
 #log ver
 plotT4vBrineLog <- plotT4vBrine + 
     scale_y_continuous(trans = 'log10') + 
@@ -350,6 +380,14 @@ dfDataSelFlow %>%
 
 #----------------------------------------------
 
+#reordering boxplot
+# data$names <- factor(data$names , levels=c("A", "D", "C", "B"))
+# 
+# #The plot is now ordered !
+# boxplot(data$value ~ data$names , col=rgb(0.3,0.5,0.4,0.6) , ylab="value" , 
+#        xlab="names in desired order")
+
+
 #boxplot on bons to see which bins to use - 2 tone color
 boxSel2t <- dfDataSel %>% 
     filter(year(date) <= 2014 | year(date) >= 2015) %>%
@@ -384,9 +422,6 @@ ggsave(filename = "Images/Selenium_Boxplot_train_color.png",
        boxSelTC,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
-#conclusion: bin2, bin3 (baseline),bin4 and bin 6
-
-#log ver
 #log ver
 boxSelTCLog <- boxSelTC + scale_y_continuous(trans = 'log10') + 
     labs(title= "Boxplot: Log of Selenium by Effluent")
@@ -395,17 +430,89 @@ ggsave(filename = "Images/Selenium_Boxplot_train_color_log.png",
        boxSelTCLog,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
+#different boxplot grouped by train type
+dfTest <- dfDataSel
+dfTest$ID <- factor(dfTest$ID , levels=c("Bin1", "Bin5", "Bin7", "Bin2", 
+                                         "Bin6", "Bin4", "Bin3", "brine"))
+
+boxSelTCGroup <- dfTest %>%
+    ggplot(aes(x = ID, y = Selenium)) +
+    geom_boxplot(fill = c("#D95F02", "#D95F02", "#D95F02", 
+                                  "darkgreen", "darkgreen", "royalblue3", 
+                                  "red3", "black")) +
+    xlab("Train Type") +
+    ylab("Selenium Content (mg/L)") +
+    labs(title= "Boxplot: Selenium by Effluent by Train") +
+    theme(legend.position = "none", axis.text=element_text(size=14))
+
+boxSelTCGroup
+
+ggsave(filename = "Images/Selenium_Boxplot_train_color_group.png", 
+       boxSelTCGroup,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#log ver
+boxSelTCGroupLog <- boxSelTCGroup + scale_y_continuous(trans = 'log10') + 
+    labs(title= "Boxplot: Log of Selenium by Effluent by train type")
+boxSelTCGroupLog
+ggsave(filename = "Images/Selenium_Boxplot_train_color_group_log.png", 
+       boxSelTCGroupLog,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+
+
 #-----------------------------------------------
 
 #Exploring linear regression with Selenium vs COD
 
-#All Bins filtered out outlier
+#All bins facet 
+plotSelvCODFac <- dfDataSel %>% 
+    filter(ID != "brine") %>% 
+    ggplot(aes(COD, Selenium)) + 
+    geom_point(alpha = 0.75, aes(color = ID), size = 3) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    facet_grid(.~ID) +
+    scale_color_brewer(palette = "Dark2") + 
+    xlab("COD mg/L") +
+    ylab("selenium mg/L") + 
+    labs(title= "Log of Selenium vs COD lin. reg. of Each Bins All Periods") + 
+    scale_x_continuous(trans = "log10") + 
+    scale_y_continuous(trans = "log10")
+
+plotSelvCODFac
+ggsave(filename = "Images/Selenium vs COD linear regression Each Bins Period All.png", 
+       plotSelvCODFac,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Carbon dosing period only.
+#Note: not enough data points so it's kinda inconclusive.
+plotSelvCODFacLP <- dfDataSel %>% 
+    filter(ID != "brine") %>% 
+    filter(date >= bin1567Period3End) %>% 
+    ggplot(aes(COD, Selenium)) + 
+    geom_point(alpha = 0.75, aes(color = ID), size = 3) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    facet_grid(.~ID) +
+    scale_color_brewer(palette = "Dark2") + 
+    xlab("COD mg/L") +
+    ylab("selenium mg/L") + 
+    labs(title= "Log of Selenium vs COD lin. reg. of Each Bins Carbon Dosing Periods") + 
+    scale_x_continuous(trans = "log10") + 
+    scale_y_continuous(trans = "log10")
+
+plotSelvCODFacLP
+ggsave(filename = "Images/Selenium vs COD linear regression Each Bins Carbon Dosing Period.png", 
+       plotSelvCODFacLP,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#All Bins filtered out outlier, exclude brine!
 plotSelvCODBA <- dfDataSel %>% 
+    filter(ID != "brine") %>% 
     ggplot(aes(COD, Selenium)) + 
     geom_point(alpha = 0.75, aes(color = ID), size = 3) +
     geom_smooth(formula = y~x, method = "lm") + 
     scale_color_brewer(palette = "Dark2") + 
-    xlab("COD") +
+    xlab("COD mg/L") +
     ylab("selenium mg/L") + 
     labs(title= "Log of Selenium vs COD lin. reg. of All Bins All Periods") + 
     scale_x_continuous(trans = "log10") + 
@@ -417,12 +524,13 @@ ggsave(filename = "Images/Selenium vs COD linear regression All Bins Period All.
 
 #All Bins last period
 plotSelvCODBAPL <- dfDataSel %>% 
+    filter(ID != "brine") %>% 
     filter(date >= bin1567Period3End) %>% 
     ggplot(aes(COD, Selenium)) + 
     geom_point(alpha = 0.75, aes(color = ID), size = 3) +
     geom_smooth(formula = y~x, method = "lm") + 
     scale_color_brewer(palette = "Dark2") + 
-    xlab("COD") +
+    xlab("COD mg/L") +
     ylab("selenium mg/L") + 
     labs(title= "Log of Selenium vs COD lin. reg. of All Bins Carbon Dosing Period") + 
     scale_x_continuous(trans = "log10") + 
@@ -446,7 +554,7 @@ plotSelvCODB1 <- dfDataSel %>%
     ggplot(aes(COD, Selenium)) + 
     geom_point(alpha = 0.65, size = 2.5, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
-    xlab("COD") +
+    xlab("COD mg/L") +
     ylab("selenium mg/L") + 
     labs(title= "Selenium vs COD lin. reg. of Bin1 All Periods") + 
     scale_x_continuous(trans = "log10") + 
@@ -463,7 +571,7 @@ plotSelvCODB2 <- dfDataSel %>%
     geom_point(alpha = 0.65, size = 2.5, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
     scale_color_brewer(palette = "Dark2") +
-    xlab("COD") +
+    xlab("COD mg/L") +
     ylab("selenium mg/L") + 
     labs(title= "Selenium vs COD lin. reg. of Bin2 All Periods") + 
     scale_x_continuous(trans = "log10") + 
@@ -480,7 +588,7 @@ plotSelvCODB2un <- dfDataSel %>%
     geom_point(alpha = 0.65, size = 2.5, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
     scale_color_brewer(palette = "Dark2") +
-    xlab("COD") +
+    xlab("COD mg/L") +
     ylab("selenium mg/L") + 
     labs(title= "Selenium vs COD lin. reg. of Bin2 All Periods non-scale")
 plotSelvCODB2un
@@ -502,7 +610,7 @@ plotSelvCODB1P4 <- dfDataSel %>%
     ggplot(aes(COD, Selenium)) + 
     geom_point(alpha = 1, size = 3.5, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
-    xlab("COD") +
+    xlab("COD mg/L") +
     ylab("selenium mg/L") + 
     labs(title= "Selenium vs COD lin. reg. of Bin1 Carbon Dosing Period") + 
     scale_x_continuous(trans = "log10") + 
@@ -520,7 +628,7 @@ plotSelvCODB2P3 <- dfDataSel %>%
     geom_point(alpha = 1, size = 3.5, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
     scale_color_brewer(palette = "Dark2") +
-    xlab("COD") +
+    xlab("COD mg/L") +
     ylab("selenium mg/L") + 
     labs(title= "Selenium vs COD lin. reg. for Bin2 Carbon Dosing Period") + 
     scale_x_continuous(trans = "log10") + 
@@ -540,6 +648,34 @@ ggsave(filename = "Images/Selenium vs COD linear regression Bin 1 vs Bin2 Carbon
 
 #---------------------------------------
 #Maybe do more DO?
+plotSelvDOFac <- dfDataSel %>% 
+    filter(ID != "brine") %>% 
+    ggplot(aes(DO.mg.L, Selenium)) + 
+    geom_point(alpha = 0.75, aes(color = ID), size = 3) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    facet_grid(.~ID) +
+    scale_color_brewer(palette = "Dark2") + 
+    xlab("DO mg/L") +
+    ylab("selenium mg/L") + 
+    labs(title= "Log of Selenium vs DO lin. reg. of Each Bins Periods All") + 
+    scale_x_continuous(trans = "log10") + 
+    scale_y_continuous(trans = "log10")
+
+plotSelvDOFac
+ggsave(filename = "Images/Selenium vs DO linear regression Each Bins Periods All.png", 
+       plotSelvDOFac,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Only cardon dosing period
+#... Not enough data! As in, no data points in the last period!
+
+
+plotSelvCODFacLP
+ggsave(filename = "Images/Selenium vs COD linear regression Each Bins Carbon Dosing Period.png", 
+       plotSelvCODFacLP,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+
 
 #Focus look at Bin2 DO on last period when carbon dosing happens
 plotSelvDOB2P3 <- dfDataSel %>% 
@@ -603,7 +739,6 @@ binsTTest
 #-----------------------------------------------
 #density
 plotSelDen <- dfDataSel %>% 
-    filter(Selenium <= 0.15) %>% 
     ggplot(aes(Selenium, color =ID)) +
     geom_density(size = 1.5) +
     scale_color_brewer(palette = "Dark2") + 
@@ -614,6 +749,21 @@ ggsave(filename = "Images/Selenium Level Distribution with cutoff.png",
        plotSelDen,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
-
-
 #--------------------------------------
+
+#--- Linear Regression And Modeling ----
+#Performing lm on all variables/columns besides ID,date and Selenium, and store result
+mods <- lapply(dfDataSel[, c(3, 5:ncol(dfDataSel))], 
+                 function(x) summary(lm(dfDataSel$Selenium ~ x)))
+mods
+
+#store the coeffcient of lm results
+coefMat <- lapply( mods, coef)
+coefMat
+
+#store the r-squaredvalues
+rssMat <- lapply( mods, "[[", "r.squared")
+rssMat
+
+save(mods, coefMat, rssMat, file = "clean/lmResults.rda")
+
