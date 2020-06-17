@@ -465,6 +465,46 @@ ggsave(filename = "Images/Selenium_Boxplot_train_color_group_log.png",
 
 #Exploring linear regression with Selenium vs COD
 
+#All bins facet 
+plotSelvCODFac <- dfDataSel %>% 
+    filter(ID != "brine") %>% 
+    ggplot(aes(COD, Selenium)) + 
+    geom_point(alpha = 0.75, aes(color = ID), size = 3) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    facet_grid(.~ID) +
+    scale_color_brewer(palette = "Dark2") + 
+    xlab("COD mg/L") +
+    ylab("selenium mg/L") + 
+    labs(title= "Log of Selenium vs COD lin. reg. of Each Bins All Periods") + 
+    scale_x_continuous(trans = "log10") + 
+    scale_y_continuous(trans = "log10")
+
+plotSelvCODFac
+ggsave(filename = "Images/Selenium vs COD linear regression Each Bins Period All.png", 
+       plotSelvCODFac,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Carbon dosing period only.
+#Note: not enough data points so it's kinda inconclusive.
+plotSelvCODFacLP <- dfDataSel %>% 
+    filter(ID != "brine") %>% 
+    filter(date >= bin1567Period3End) %>% 
+    ggplot(aes(COD, Selenium)) + 
+    geom_point(alpha = 0.75, aes(color = ID), size = 3) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    facet_grid(.~ID) +
+    scale_color_brewer(palette = "Dark2") + 
+    xlab("COD mg/L") +
+    ylab("selenium mg/L") + 
+    labs(title= "Log of Selenium vs COD lin. reg. of Each Bins Carbon Dosing Periods") + 
+    scale_x_continuous(trans = "log10") + 
+    scale_y_continuous(trans = "log10")
+
+plotSelvCODFacLP
+ggsave(filename = "Images/Selenium vs COD linear regression Each Bins Carbon Dosing Period.png", 
+       plotSelvCODFacLP,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
 #All Bins filtered out outlier, exclude brine!
 plotSelvCODBA <- dfDataSel %>% 
     filter(ID != "brine") %>% 
@@ -472,7 +512,7 @@ plotSelvCODBA <- dfDataSel %>%
     geom_point(alpha = 0.75, aes(color = ID), size = 3) +
     geom_smooth(formula = y~x, method = "lm") + 
     scale_color_brewer(palette = "Dark2") + 
-    xlab("COD") +
+    xlab("COD mg/L") +
     ylab("selenium mg/L") + 
     labs(title= "Log of Selenium vs COD lin. reg. of All Bins All Periods") + 
     scale_x_continuous(trans = "log10") + 
@@ -490,7 +530,7 @@ plotSelvCODBAPL <- dfDataSel %>%
     geom_point(alpha = 0.75, aes(color = ID), size = 3) +
     geom_smooth(formula = y~x, method = "lm") + 
     scale_color_brewer(palette = "Dark2") + 
-    xlab("COD") +
+    xlab("COD mg/L") +
     ylab("selenium mg/L") + 
     labs(title= "Log of Selenium vs COD lin. reg. of All Bins Carbon Dosing Period") + 
     scale_x_continuous(trans = "log10") + 
@@ -514,7 +554,7 @@ plotSelvCODB1 <- dfDataSel %>%
     ggplot(aes(COD, Selenium)) + 
     geom_point(alpha = 0.65, size = 2.5, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
-    xlab("COD") +
+    xlab("COD mg/L") +
     ylab("selenium mg/L") + 
     labs(title= "Selenium vs COD lin. reg. of Bin1 All Periods") + 
     scale_x_continuous(trans = "log10") + 
@@ -531,7 +571,7 @@ plotSelvCODB2 <- dfDataSel %>%
     geom_point(alpha = 0.65, size = 2.5, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
     scale_color_brewer(palette = "Dark2") +
-    xlab("COD") +
+    xlab("COD mg/L") +
     ylab("selenium mg/L") + 
     labs(title= "Selenium vs COD lin. reg. of Bin2 All Periods") + 
     scale_x_continuous(trans = "log10") + 
@@ -548,7 +588,7 @@ plotSelvCODB2un <- dfDataSel %>%
     geom_point(alpha = 0.65, size = 2.5, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
     scale_color_brewer(palette = "Dark2") +
-    xlab("COD") +
+    xlab("COD mg/L") +
     ylab("selenium mg/L") + 
     labs(title= "Selenium vs COD lin. reg. of Bin2 All Periods non-scale")
 plotSelvCODB2un
@@ -570,7 +610,7 @@ plotSelvCODB1P4 <- dfDataSel %>%
     ggplot(aes(COD, Selenium)) + 
     geom_point(alpha = 1, size = 3.5, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
-    xlab("COD") +
+    xlab("COD mg/L") +
     ylab("selenium mg/L") + 
     labs(title= "Selenium vs COD lin. reg. of Bin1 Carbon Dosing Period") + 
     scale_x_continuous(trans = "log10") + 
@@ -588,7 +628,7 @@ plotSelvCODB2P3 <- dfDataSel %>%
     geom_point(alpha = 1, size = 3.5, aes(color = ID)) +
     geom_smooth(formula = y~x, method = "lm") + 
     scale_color_brewer(palette = "Dark2") +
-    xlab("COD") +
+    xlab("COD mg/L") +
     ylab("selenium mg/L") + 
     labs(title= "Selenium vs COD lin. reg. for Bin2 Carbon Dosing Period") + 
     scale_x_continuous(trans = "log10") + 
@@ -608,6 +648,34 @@ ggsave(filename = "Images/Selenium vs COD linear regression Bin 1 vs Bin2 Carbon
 
 #---------------------------------------
 #Maybe do more DO?
+plotSelvDOFac <- dfDataSel %>% 
+    filter(ID != "brine") %>% 
+    ggplot(aes(DO.mg.L, Selenium)) + 
+    geom_point(alpha = 0.75, aes(color = ID), size = 3) +
+    geom_smooth(formula = y~x, method = "lm") + 
+    facet_grid(.~ID) +
+    scale_color_brewer(palette = "Dark2") + 
+    xlab("DO mg/L") +
+    ylab("selenium mg/L") + 
+    labs(title= "Log of Selenium vs DO lin. reg. of Each Bins Periods All") + 
+    scale_x_continuous(trans = "log10") + 
+    scale_y_continuous(trans = "log10")
+
+plotSelvDOFac
+ggsave(filename = "Images/Selenium vs DO linear regression Each Bins Periods All.png", 
+       plotSelvDOFac,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Only cardon dosing period
+#... Not enough data! As in, no data points in the last period!
+
+
+plotSelvCODFacLP
+ggsave(filename = "Images/Selenium vs COD linear regression Each Bins Carbon Dosing Period.png", 
+       plotSelvCODFacLP,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+
 
 #Focus look at Bin2 DO on last period when carbon dosing happens
 plotSelvDOB2P3 <- dfDataSel %>% 
@@ -681,6 +749,14 @@ ggsave(filename = "Images/Selenium Level Distribution with cutoff.png",
        plotSelDen,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
-
-
 #--------------------------------------
+
+#--- Linear Regression And Modeling ----
+#Performing lm on all variables/columns besides ID,date and Selenium, and store result
+mods <- lapply(dfDataSel[, c(3, 5:ncol(dfDataSel))], 
+                 function(x) summary(lm(dfDataSel$Selenium ~ x)))
+mods
+
+#store the coeffcient of lm results
+coefMat <- lapply( mods, coef)
+coefMat
