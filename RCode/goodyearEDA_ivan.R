@@ -8,6 +8,7 @@ theme_update(panel.grid.minor = element_blank())
 library( lubridate)
 library( rcartocolor)
 library( RColorBrewer)
+library( viridis)
 library( scales)
 library( rstatix)
 library( dplyr)
@@ -80,7 +81,7 @@ dfDataSt <- dfData %>%
 #Can also use subset(): i.e. subset(df, B != )
 dfDataSt <- filter(dfDataSt, date != removeDates)
 
-#Identity and remove the row with very low selenium from brine
+#Identify and remove the row with very low selenium from brine
 lowBrineSel <- dfDataSt %>% 
     filter(ID == "brine") %>% 
     slice(which.min(Selenium))
@@ -88,7 +89,7 @@ dfDataSt <- filter(dfDataSt, date != lowBrineSel$date)
 
 #lean data with mainly relevant variables 
 dfDataStLn <- dfDataSt %>% 
-                select(ID, date, TDS, Selenium, Copper, Nitrate, Phosphorus, 
+                select(ID, date, TDS, Selenium, Arsenic, Nitrate, Phosphorus, 
                        COD, DOC, DO.mg.L, pH, Temp..Celsius, Inflow, Outflow)
 
 #Data with Selenium focus, removing all NA rows from Selenium
@@ -766,4 +767,131 @@ rssMat <- lapply( mods, "[[", "r.squared")
 rssMat
 
 save(mods, coefMat, rssMat, file = "clean/lmResults.rda")
+
+#-------------------------------------
+
+#--- graphs of time based facet models ---
+#Note: a visual look into 
+
+GGPSelVSVarByYear<- function(dataset, target){
+    result <- dataset %>% 
+            ggplot(aes_string(target, "Selenium")) +
+            geom_point(alpha = 1, aes(color = month(date, label = TRUE))) + # plot factor by month
+            facet_wrap(~year(date), 4) + # use wrap when faceting by one variable
+            scale_color_manual(values = plasma(15)) + #value is 15 to avoid using the lighter colors
+            theme(
+                panel.background = element_rect(fill = "#BFD5E3", colour = "#6D9EC1",
+                                                size = 2, linetype = "solid"),
+                panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                                colour = "white"), 
+                panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                                colour = "white")
+            ) + 
+            ylab("Selenium mg/L")
+    
+    return(result)
+}
+
+#nitrate is key
+plotSelvNit <- GGPSelVSVarByYear(dfDataSel, "Nitrate")
+plotSelvNit + xlab("Nitrate mg/L") +
+    labs(title = "Nitrate vs Selenium")
+
+plotSelvCOD <- GGPSelVSVarByYear(dfDataSel, "COD")
+plotSelvCOD + xlab("COD mg/L") +
+    labs(title = "COD vs Selenium")
+
+plotSelvpH <- GGPSelVSVarByYear(dfDataSel, "pH")
+plotSelvpH + xlab("pH") +
+    labs(title = "pH vs Selenium")
+
+#TODO: clean out outlier in 2012
+#Not much on phosphorus
+plotSelvPho <- GGPSelVSVarByYear(dfDataSel, "Phosphorus")
+plotSelvPho + xlab("Phosphorus mg/L") +
+    labs(title = "Phosphorus vs Selenium")
+
+#Not much on Copper
+plotSelvCop <- GGPSelVSVarByYear(dfDataSel, "Copper")
+plotSelvCop + xlab("Copper mg/L") +
+    labs(title = "Copper vs Selenium")
+
+plotSelvDOmgl <- GGPSelVSVarByYear(dfDataSel, "DO.mg.L")
+plotSelvDOmgl + xlab("DO mg/L") +
+    labs(title = "DO vs Selenium")
+
+#TDS - Worst predictor
+plotSelvTDS <- GGPSelVSVarByYear(dfDataSel, "TDS")
+plotSelvTDS + xlab("TDS mg/L") +
+    labs(title = "TDS vs Selenium")
+
+#-more columns
+#Arsenic
+plotSelvArs <- GGPSelVSVarByYear(dfDataSt, "Arsenic")
+plotSelvArs + xlab("Arsenic mg/L") +
+    labs(title = "Arsenic vs Selenium")
+
+#Sulfate
+plotSelvSulfa <- GGPSelVSVarByYear(dfDataSt, "Sulfate")
+plotSelvSulfa + xlab("Sulfate mg/L") +
+    labs(title = "Sulfate vs Selenium") + 
+    scale_y_continuous(trans = "log10")
+
+#Chloride
+plotSelvChlor <- GGPSelVSVarByYear(dfDataSt, "Chloride")
+plotSelvChlor + xlab("Chloride mg/L") +
+    labs(title = "Chloride vs Selenium") + 
+    scale_y_continuous(trans = "log10")
+
+#Chromium
+plotSelvChrom <- GGPSelVSVarByYear(dfDataSt, "Chromium")
+plotSelvChrom + xlab("Chromium mg/L") +
+    labs(title = "Chromium vs Selenium")
+
+#Zinc
+plotSelvZinc <- GGPSelVSVarByYear(dfDataSt, "Zinc")
+plotSelvZinc + xlab("Zinc mg/L") +
+    labs(title = "Zinc vs Selenium")
+
+#Nitrite
+plotSelvNitri <- GGPSelVSVarByYear(dfDataSt, "Nitrite")
+plotSelvNitri + xlab("Nitrite mg/L") +
+    labs(title = "Nitrite vs Selenium")
+
+#Boron
+plotSelvBor <- GGPSelVSVarByYear(dfDataSt, "Boron")
+plotSelvBor + xlab("Boron mg/L") +
+    labs(title = "Boron vs Selenium")
+
+#Thallium
+plotSelvTha <- GGPSelVSVarByYear(dfDataSt, "Thallium")
+plotSelvTha + xlab("Thallium mg/L") +
+    labs(title = "Thallium vs Selenium")
+
+#Sulfide
+plotSelvSulfi <- GGPSelVSVarByYear(dfDataSt, "Sulfide")
+plotSelvSulfi + xlab("Sulfide mg/L") +
+    labs(title = "Sulfide vs Selenium")
+
+#Conductivity.S.m
+plotSelvCon <- GGPSelVSVarByYear(dfDataSt, "Conductivity.S.m")
+plotSelvCon + xlab("Conductivity.S.m") +
+    labs(title = "Conductivity.S.m vs Selenium")
+
+#ORP
+plotSelvORP <- GGPSelVSVarByYear(dfDataSt, "ORP")
+plotSelvORP + xlab("ORP") +
+    labs(title = "ORP vs Selenium")
+
+
+
+#--------------------------
+
+#--- get the lower pH values, lower 25% percent ---
+
+temp <- dfDataSel %>% 
+    filter(quantile(pH, 0.25, na.rm = TRUE)>pH)
+glimpse(temp)
+range(dfDataSel$pH, na.rm = TRUE)
+
 
