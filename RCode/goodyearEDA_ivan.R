@@ -922,7 +922,7 @@ plotSelvORP + xlab("ORP") +
 
 #--------------------------
 
-GGPSelVSVarByTrain<- function(dataset, target){
+GGPSelVSVarByTrainVeg<- function(dataset, target){
     result <- dataset %>% 
         ggplot(aes_string(target, "Selenium")) +
         geom_point(alpha = 1, aes(color = TrainGroup)) + # plot factor by month
@@ -941,8 +941,12 @@ GGPSelVSVarByTrain<- function(dataset, target){
     return(result)
 }
 
-plotSelvTrain <- GGPSelVSVarByTrain(dfDataSel, "Nitrate")
-plotSelvTrain
+plotSelvTrainVeg <- GGPSelVSVarByTrain(dfDataSel, "Nitrate") + 
+    labs(title = "Veg Type Analysis ")
+plotSelvTrainVeg
+ggsave(filename = "Images/Train Comparison Selenium vs .png", 
+       plotSelvNit,
+       width = 42.3, height = 23.15, units = "cm", device='png')
 
 #--------------------------
 
