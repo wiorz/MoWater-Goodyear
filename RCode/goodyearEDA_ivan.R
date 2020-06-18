@@ -90,7 +90,7 @@ dfDataSt <- filter(dfDataSt, date != lowBrineSel$date)
 #lean data with mainly relevant variables 
 dfDataStLn <- dfDataSt %>% 
                 select(ID, date, Selenium, Arsenic, Nitrate, Phosphorus, 
-                       COD, DO.mg.L, pH)
+                       COD, DO.mg.L, pH, Temp..Celsius)
 
 #Add new column TrainGroup base on the ID
 dfDataStLn$TrainGroup <- ifelse(dfDataStLn$ID == "Bin1"| dfDataStLn$ID == "Bin5" |
@@ -922,11 +922,11 @@ plotSelvORP + xlab("ORP") +
 
 #--------------------------
 
-GGPSelVSVarByTrain<- function(dataset, target){
+GGPSelVSVarByTrainVeg<- function(dataset, target){
     result <- dataset %>% 
         ggplot(aes_string(target, "Selenium")) +
         geom_point(alpha = 1, aes(color = TrainGroup)) + # plot factor by month
-        facet_wrap(~year(date), 4) + # use wrap when faceting by one variable
+        facet_wrap(~Veg, 4) + # use wrap when faceting by one variable
         scale_color_manual(values = plasma(7)) + #value is 15 to avoid using the lighter colors
         theme(
             panel.background = element_rect(fill = "#BFD5E3", colour = "#6D9EC1",
@@ -941,8 +941,12 @@ GGPSelVSVarByTrain<- function(dataset, target){
     return(result)
 }
 
-plotSelvTrain <- GGPSelVSVarByTrain(dfDataSel, "Nitrate")
-plotSelvTrain
+plotSelvTrainVeg <- GGPSelVSVarByTrain(dfDataSel, "Nitrate") + 
+    labs(title = "Veg Type Analysis ")
+plotSelvTrainVeg
+ggsave(filename = "Images/Train Comparison Selenium vs .png", 
+       plotSelvNit,
+       width = 42.3, height = 23.15, units = "cm", device='png')
 
 #--------------------------
 
