@@ -89,8 +89,30 @@ dfDataSt <- filter(dfDataSt, date != lowBrineSel$date)
 
 #lean data with mainly relevant variables 
 dfDataStLn <- dfDataSt %>% 
-                select(ID, date, TDS, Selenium, Arsenic, Nitrate, Phosphorus, 
-                       COD, DOC, DO.mg.L, pH, Temp..Celsius, Inflow, Outflow)
+                select(ID, date, Selenium, Arsenic, Nitrate, Phosphorus, 
+                       COD, DO.mg.L, pH)
+
+#Add new column TrainGroup base on the ID
+dfDataStLn$TrainGroup <- ifelse(dfDataStLn$ID == "Bin1"| dfDataStLn$ID == "Bin5" |
+                                    dfDataStLn$ID == "Bin7", "Train 1",
+                              ifelse(dfDataStLn$ID == "Bin2" | 
+                                         dfDataStLn$ID == "Bin6", "Train 2", 
+                                     ifelse(dfDataStLn$ID == "Bin4", "Train 3", 
+                                            ifelse(dfDataStLn$ID == "Bin3", 
+                                                   "Train 4", "Brine"))))
+
+#Add new column Vegetation base on the ID
+dfDataStLn$Veg <- ifelse(dfDataStLn$ID == "Bin2", "Type B",
+                              ifelse(dfDataStLn$ID == "Bin6" | 
+                                         dfDataStLn$ID == "Bin7", "Type C", 
+                                     "Type A"))
+
+#Added new column for media type base on ID
+dfDataStLn$MediaType <- ifelse(dfDataStLn$ID == "Bin7", "Soil",
+                                ifelse(dfDataStLn$ID == "Bin1" | 
+                                           dfDataStLn$ID == "Bin1", "MM", 
+                                       ifelse(dfDataStLn$ID == "Bin4", "GW", 
+                                              "PM")))
 
 #Data with Selenium focus, removing all NA rows from Selenium
 dfDataSel <- dfDataStLn[!is.na(dfDataStLn$Selenium), ]
@@ -897,6 +919,30 @@ plotSelvORP + xlab("ORP") +
     labs(title = "ORP vs Selenium")
 
 
+
+#--------------------------
+
+GGPSelVSVarByTrain<- function(dataset, target){
+    result <- dataset %>% 
+        ggplot(aes_string(target, "Selenium")) +
+        geom_point(alpha = 1, aes(color = TrainGroup)) + # plot factor by month
+        facet_wrap(~year(date), 4) + # use wrap when faceting by one variable
+        scale_color_manual(values = plasma(7)) + #value is 15 to avoid using the lighter colors
+        theme(
+            panel.background = element_rect(fill = "#BFD5E3", colour = "#6D9EC1",
+                                            size = 2, linetype = "solid"),
+            panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                            colour = "white"), 
+            panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                            colour = "white")
+        ) + 
+        ylab("Selenium mg/L")
+    
+    return(result)
+}
+
+plotSelvTrain <- GGPSelVSVarByTrain(dfDataSel, "Nitrate")
+plotSelvTrain
 
 #--------------------------
 
