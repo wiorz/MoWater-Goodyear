@@ -87,6 +87,11 @@ lowBrineSel <- dfDataSt %>%
     slice(which.min(Selenium))
 dfDataSt <- filter(dfDataSt, date != lowBrineSel$date)
 
+highPho <- dfDataSt %>% 
+    slice(which.max(Phosphorus))
+dfDataSt <- filter(dfDataSt, date != highPho$date)
+
+
 #lean data with mainly relevant variables 
 dfDataStLn <- dfDataSt %>% 
                 select(ID, date, Selenium, Arsenic, Nitrate, Phosphorus, 
@@ -102,10 +107,10 @@ dfDataStLn$TrainGroup <- ifelse(dfDataStLn$ID == "Bin1"| dfDataStLn$ID == "Bin5"
                                                    "Train 4", "Brine"))))
 
 #Add new column Vegetation base on the ID
-dfDataStLn$Veg <- ifelse(dfDataStLn$ID == "Bin2", "Type B",
-                              ifelse(dfDataStLn$ID == "Bin6" | 
-                                         dfDataStLn$ID == "Bin7", "Type C", 
-                                     "Type A"))
+dfDataStLn$Veg <- ifelse(dfDataStLn$ID == "Bin2", "VegType B",
+                              ifelse(dfDataStLn$ID == "VegBin6" | 
+                                         dfDataStLn$ID == "Bin7", "VegType C", 
+                                     "VegType A"))
 
 #Added new column for media type base on ID
 dfDataStLn$MediaType <- ifelse(dfDataStLn$ID == "Bin7", "Soil",
@@ -751,7 +756,8 @@ ggsave(filename = "Images/Selenium vs COD linear regression Bin1 Period A.png",
 #Period 1
 
 #-----------------------------------------------
-#t-test
+#--- t-test ---
+#uses library( rstatix)
 
 binsTTest <- dfDataSel %>% 
     t_test(Selenium ~ ID) %>%
@@ -797,6 +803,7 @@ save(mods, coefMat, rssMat, file = "clean/lmResults.rda")
 
 GGPSelVSVarByYear<- function(dataset, target){
     result <- dataset %>% 
+            filter(ID != "brine") %>% 
             ggplot(aes_string(target, "Selenium")) +
             geom_point(alpha = 1, aes(color = month(date, label = TRUE))) + # plot factor by month
             facet_wrap(~year(date), 4) + # use wrap when faceting by one variable
@@ -830,18 +837,35 @@ ggsave(filename = "Images/Yearly Comparison Selenium vs Arsenic.png",
        plotSelvArs,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
+#COD
 plotSelvCOD <- GGPSelVSVarByYear(dfDataSel, "COD")
 plotSelvCOD + xlab("COD mg/L") +
     labs(title = "COD vs Selenium")
 ggsave(filename = "Images/Yearly Comparison Selenium vs COD.png", 
        plotSelvCOD,
        width = 42.3, height = 23.15, units = "cm", device='png')
-
+#pH
 plotSelvpH <- GGPSelVSVarByYear(dfDataSel, "pH")
 plotSelvpH + xlab("pH") +
     labs(title = "pH vs Selenium")
 ggsave(filename = "Images/Yearly Comparison Selenium vs pH.png", 
        plotSelvpH,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#DO
+plotSelvDOmgl <- GGPSelVSVarByYear(dfDataSel, "DO.mg.L")
+plotSelvDOmgl + xlab("DO mg/L") +
+    labs(title = "DO vs Selenium")
+ggsave(filename = "Images/Yearly Comparison Selenium vs DO.png", 
+       plotSelvDOmgl,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Temp
+plotSelvT <- GGPSelVSVarByYear(dfDataSel, "Temp..Celsius")
+plotSelvT + xlab("Temp..Celsius") +
+    labs(title = "Temp vs Selenium")
+ggsave(filename = "Images/Yearly Comparison Selenium vs Temp.png", 
+       plotSelvT,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
 #TODO: clean out outlier in 2012
@@ -855,16 +879,12 @@ plotSelvCop <- GGPSelVSVarByYear(dfDataSel, "Copper")
 plotSelvCop + xlab("Copper mg/L") +
     labs(title = "Copper vs Selenium")
 
-plotSelvDOmgl <- GGPSelVSVarByYear(dfDataSel, "DO.mg.L")
-plotSelvDOmgl + xlab("DO mg/L") +
-    labs(title = "DO vs Selenium")
-
 #TDS - Worst predictor
 plotSelvTDS <- GGPSelVSVarByYear(dfDataSel, "TDS")
 plotSelvTDS + xlab("TDS mg/L") +
     labs(title = "TDS vs Selenium")
 
-#-more columns
+#---Below are variables we found to be low correlation
 
 #Sulfate
 plotSelvSulfa <- GGPSelVSVarByYear(dfDataSt, "Sulfate")
@@ -918,16 +938,17 @@ plotSelvORP <- GGPSelVSVarByYear(dfDataSt, "ORP")
 plotSelvORP + xlab("ORP") +
     labs(title = "ORP vs Selenium")
 
-
-
 #--------------------------
 
-GGPSelVSVarByTrainVeg<- function(dataset, target){
+#--- veg type comparision ---
+
+GGPSelVSVarByTrainVeg<- function(dataset, varX, varY){
     result <- dataset %>% 
-        ggplot(aes_string(target, "Selenium")) +
-        geom_point(alpha = 1, aes(color = TrainGroup)) + # plot factor by month
-        facet_wrap(~Veg, 4) + # use wrap when faceting by one variable
-        scale_color_manual(values = plasma(7)) + #value is 15 to avoid using the lighter colors
+        filter(ID != "brine") %>% 
+        ggplot(aes_string(varX, varY)) +
+        geom_point(alpha = 1, aes(color = TrainGroup)) +
+        facet_wrap(~Veg, 4) + 
+        scale_color_brewer(palette = "Dark2") +
         theme(
             panel.background = element_rect(fill = "#BFD5E3", colour = "#6D9EC1",
                                             size = 2, linetype = "solid"),
@@ -936,16 +957,188 @@ GGPSelVSVarByTrainVeg<- function(dataset, target){
             panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
                                             colour = "white")
         ) + 
-        ylab("Selenium mg/L")
+        ylab("Log of Selenium mg/L") + 
+        scale_y_continuous(trans = "log10")
     
     return(result)
 }
 
-plotSelvTrainVeg <- GGPSelVSVarByTrain(dfDataSel, "Nitrate") + 
-    labs(title = "Veg Type Analysis ")
-plotSelvTrainVeg
-ggsave(filename = "Images/Train Comparison Selenium vs .png", 
-       plotSelvNit,
+#Comparison base on Veg Type by train
+#nitrate
+plotTrainVegSelvNit <- GGPSelVSVarByTrainVeg(dfDataSel, "Nitrate", "Selenium") + 
+    geom_smooth(formula = y~x, method = "lm") + 
+    labs(title = "Veg Type Analysis of Selenium vs Nitrate base on Train")
+plotTrainVegSelvNit
+ggsave(filename = "Images/Veg Type Analysis of Selenium vs Nitrate base on Train.png", 
+       plotTrainVegSelvNit,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Arsenic
+plotTrainVegSelvAr <- GGPSelVSVarByTrainVeg(dfDataSel, "Arsenic", "Selenium") + 
+    geom_smooth(formula = y~x, method = "lm") + 
+    labs(title = "Veg Type Analysis of Selenium vs Arsenic base on Train")
+plotTrainVegSelvAr
+ggsave(filename = "Images/Veg Type Analysis of Selenium vs Arsenic base on Train.png", 
+       plotTrainVegSelvAr,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Look at Temp base on VegType
+plotTrainVegSelvT <- GGPSelVSVarByTrainVeg(dfDataSel, "Temp..Celsius", "Selenium") + 
+    geom_smooth(formula = y~x, method = "lm") + 
+    labs(title = "Veg Type Analysis of Selenium vs Temp base on Train")
+plotTrainVegSelvT
+ggsave(filename = "Images/Veg Type Analysis of Selenium vs Temp base on Train.png", 
+       plotTrainVegSelvT,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#DO
+plotTrainVegSelvDO <- GGPSelVSVarByTrainVeg(dfDataSel, "DO.mg.L", "Selenium") +
+    geom_smooth(formula = y~x, method = "lm") + 
+    labs(title = "Veg Type Analysis of Selenium vs DO base on Train")
+plotTrainVegSelvDO
+ggsave(filename = "Images/Veg Type Analysis of Selenium vs DO base on Train.png", 
+       plotTrainVegSelvDO,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#pH
+plotTrainVegSelvpH <- GGPSelVSVarByTrainVeg(dfDataSel, "pH", "Selenium") + 
+    geom_smooth(formula = y~x, method = "lm") + 
+    labs(title = "Veg Type Analysis of Selenium vs pH base on Train")
+plotTrainVegSelvpH
+ggsave(filename = "Images/Veg Type Analysis of Selenium vs pH base on Train.png", 
+       plotTrainVegSelvpH,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#COD
+plotTrainVegSelvCOD <- GGPSelVSVarByTrainVeg(dfDataSel, "COD", "Selenium") + 
+    geom_smooth(formula = y~x, method = "lm") + 
+    labs(title = "Veg Type Analysis of Selenium vs COD base on Train")
+plotTrainVegSelvCOD
+ggsave(filename = "Images/Veg Type Analysis of Selenium vs COD base on Train.png", 
+       plotTrainVegSelvCOD,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Phosphorous
+plotTrainVegSelvPho <- GGPSelVSVarByTrainVeg(dfDataSel, "Phosphorus", "Selenium") + 
+    geom_smooth(formula = y~x, method = "lm") + 
+    labs(title = "Veg Type Analysis of Selenium vs Phosphorus base on Train")
+plotTrainVegSelvPho
+ggsave(filename = "Images/Veg Type Analysis of Selenium vs Phosphorus base on Train.png", 
+       plotTrainVegSelvPho,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#--- Comparison base on veg type and bin
+
+#By Bin type, from 2016 (stable periods after management change)
+GGPSelVSVarByBinVegStable<- function(dataset, varX, varY){
+    result <- dataset %>% 
+        filter(ID != "brine") %>% 
+        filter(date >= unstablePeriodEnd) %>% 
+        ggplot(aes_string(varX, varY)) +
+        geom_point(alpha = 1, aes(color = ID)) +
+        facet_wrap(~Veg, 4) + 
+        scale_color_brewer(palette = "Dark2") +
+        theme(
+            panel.background = element_rect(fill = "#BFD5E3", colour = "#6D9EC1",
+                                            size = 2, linetype = "solid"),
+            panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                            colour = "white"), 
+            panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                            colour = "white")
+        ) + 
+        ylab("Log of Selenium mg/L") + 
+        scale_y_continuous(trans = "log10")
+    
+    return(result)
+}
+
+#COD Stable by Bin
+plotBinVegStabSelvCOD <- GGPSelVSVarByBinVegStable(dfDataSel, "COD", "Selenium") + 
+    geom_smooth(formula = y~x, method = "lm") + 
+    labs(title = "Veg Type Analysis of Selenium vs COD base on Bin from 2016")
+plotBinVegStabSelvCOD
+ggsave(filename = "Images/Veg Type Analysis of Selenium vs COD base on Bin 2016.png", 
+       plotBinVegStabSelvCOD,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#pH
+plotBinVegStabSelvpH <- GGPSelVSVarByBinVegStable(dfDataSel, "pH", "Selenium") + 
+    geom_smooth(formula = y~x, method = "lm") + 
+    labs(title = "Veg Type Analysis of Selenium vs pH base on Bin from 2016")
+plotBinVegStabSelvpH
+ggsave(filename = "Images/Veg Type Analysis of Selenium vs pH base on Bin 2016.png", 
+       plotBinVegStabSelvpH,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Temp
+plotBinVegStabSelvT <- GGPSelVSVarByBinVegStable(dfDataSel, "Temp..Celsius", 
+                                                 "Selenium") + 
+    geom_smooth(formula = y~x, method = "lm") + 
+    labs(title = "Veg Type Analysis of Selenium vs Temp base on Bin from 2016")
+plotBinVegStabSelvT
+ggsave(filename = "Images/Veg Type Analysis of Selenium vs Temp base on Bin 2016.png", 
+       plotBinVegStabSelvT,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#DO
+plotBinVegStabSelvDO <- GGPSelVSVarByBinVegStable(dfDataSel, "DO.mg.L", 
+                                                 "Selenium") + 
+    geom_smooth(formula = y~x, method = "lm") + 
+    labs(title = "Veg Type Analysis of Selenium vs DO base on Bin from 2016")
+plotBinVegStabSelvDO
+ggsave(filename = "Images/Veg Type Analysis of Selenium vs DO base on Bin 2016.png", 
+       plotBinVegStabSelvDO,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Nitrate
+plotBinVegStabSelvNit <- GGPSelVSVarByBinVegStable(dfDataSel, "Nitrate", 
+                                                  "Selenium") + 
+    geom_smooth(formula = y~x, method = "lm") + 
+    labs(title = "Veg Type Analysis of Selenium vs Nitrate base on Bin from 2016")
+plotBinVegStabSelvNit
+ggsave(filename = "Images/Veg Type Analysis of Selenium vs Nitrate base on Bin 2016.png", 
+       plotBinVegStabSelvNit,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#--- vs plots
+#Nitrate
+plotNitvs <- ggarrange(plotTrainVegSelvNit, plotBinVegStabSelvNit, nrow = 2, 
+                              common.legend = FALSE)
+plotNitvs
+ggsave(filename = "Images/Veg Type compare Nitrate.png", 
+       plotNitvs,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#COD
+plotCODvs <- ggarrange(plotTrainVegSelvCOD, plotBinVegStabSelvCOD, nrow = 2, 
+                       common.legend = FALSE)
+plotCODvs
+ggsave(filename = "Images/Veg Type compare COD.png", 
+       plotCODvs,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#DO
+plotDOvs <- ggarrange(plotTrainVegSelvDO, plotBinVegStabSelvDO, nrow = 2, 
+                       common.legend = FALSE)
+plotDOvs
+ggsave(filename = "Images/Veg Type compare DO.png", 
+       plotDOvs,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#Temp
+plotTvs <- ggarrange(plotTrainVegSelvT, plotBinVegStabSelvT, nrow = 2, 
+                       common.legend = FALSE)
+plotTvs
+ggsave(filename = "Images/Veg Type compare Temp.png", 
+       plotTvs,
+       width = 42.3, height = 23.15, units = "cm", device='png')
+
+#pH
+plotpHvs <- ggarrange(plotTrainVegSelvpH, plotBinVegStabSelvpH, nrow = 2, 
+                     common.legend = FALSE)
+plotpHvs
+ggsave(filename = "Images/Veg Type compare pH.png", 
+       plotpHvs,
        width = 42.3, height = 23.15, units = "cm", device='png')
 
 #--------------------------
@@ -957,4 +1150,103 @@ temp <- dfDataSel %>%
 glimpse(temp)
 range(dfDataSel$pH, na.rm = TRUE)
 
+#--------------------------
 
+#--- Make data object for the difference between influent and effluent ---
+
+#add date
+#Note: using dfData because other dataset may not have matching sizes
+dateTmp <- dfDataSel %>% 
+            filter(ID == "Bin1") %>% 
+            select(date)
+
+#Init base for brine to bin1
+dfDiff <- tibble(ID = rep("B1-S", count(dateTmp)))
+dfDiff <- add_column(dfDiff, dateTmp)
+
+tmp1<-dfDataSel[which(dfDataSel$ID == "Bin1"), 2:10]
+tmp2<-dfDataSel[which(dfDataSel$ID == "brine"), 2:10]
+dfDiff <- add_column(dfDiff, tmp1[ , 2:ncol(tmp1)] - tmp2[ , 2:ncol(tmp2)])
+
+#b1 to b5
+
+tmp1<-dfDataSel[which(dfDataSel$ID == "Bin5"), 1:10]
+tmp2<-dfDataSel[which(dfDataSel$ID == "Bin1"), 1:10]
+tmp1 <- tmp1[tmp1$date %in% tmp2$date, ]
+tmp2 <- tmp2[tmp2$date %in% tmp1$date, ]
+
+dateTmp <- tmp1 %>% 
+        select(date)
+dfDiff1 <- tibble(ID = rep("B5-B1", count(dateTmp)))
+dfDiff1 <- add_column(dfDiff1, dateTmp)
+dfDiff1 <- add_column(dfDiff1, tmp1[ , 3:ncol(tmp1)] - tmp2[ , 3:ncol(tmp2)])
+
+dfDiff <-add_row(dfDiff, dfDiff1)
+
+#b5 to b7
+tmp1<-dfDataSel[which(dfDataSel$ID == "Bin7"), 1:10]
+tmp2<-dfDataSel[which(dfDataSel$ID == "Bin5"), 1:10]
+tmp1 <- tmp1[tmp1$date %in% tmp2$date, ]
+tmp2 <- tmp2[tmp2$date %in% tmp1$date, ]
+
+dateTmp <- tmp1 %>% 
+    select(date)
+dfDiff1 <- tibble(ID = rep("B7-B5", count(dateTmp)))
+dfDiff1 <- add_column(dfDiff1, dateTmp)
+dfDiff1 <- add_column(dfDiff1, tmp1[ , 3:ncol(tmp1)] - tmp2[ , 3:ncol(tmp2)])
+
+dfDiff <-add_row(dfDiff, dfDiff1)
+
+#b2 - brine
+tmp1<-dfDataSel[which(dfDataSel$ID == "Bin2"), 1:10]
+tmp2<-dfDataSel[which(dfDataSel$ID == "brine"), 1:10]
+tmp1 <- tmp1[tmp1$date %in% tmp2$date, ]
+tmp2 <- tmp2[tmp2$date %in% tmp1$date, ]
+dateTmp <- tmp1 %>% 
+    select(date)
+dfDiff1 <- tibble(ID = rep("B2-S", count(dateTmp)))
+dfDiff1 <- add_column(dfDiff1, dateTmp)
+dfDiff1 <- add_column(dfDiff1, tmp1[ , 3:ncol(tmp1)] - tmp2[ , 3:ncol(tmp2)])
+
+dfDiff <-add_row(dfDiff, dfDiff1)
+
+#b6 - b2
+tmp1<-dfDataSel[which(dfDataSel$ID == "Bin6"), 1:10]
+tmp2<-dfDataSel[which(dfDataSel$ID == "Bin2"), 1:10]
+tmp1 <- tmp1[tmp1$date %in% tmp2$date, ]
+tmp2 <- tmp2[tmp2$date %in% tmp1$date, ]
+dateTmp <- tmp1 %>% 
+    select(date)
+dfDiff1 <- tibble(ID = rep("B6-B2", count(dateTmp)))
+dfDiff1 <- add_column(dfDiff1, dateTmp)
+dfDiff1 <- add_column(dfDiff1, tmp1[ , 3:ncol(tmp1)] - tmp2[ , 3:ncol(tmp2)])
+
+dfDiff <-add_row(dfDiff, dfDiff1)
+
+#b3 - brine
+tmp1<-dfDataSel[which(dfDataSel$ID == "Bin3"), 1:10]
+tmp2<-dfDataSel[which(dfDataSel$ID == "brine"), 1:10]
+tmp1 <- tmp1[tmp1$date %in% tmp2$date, ]
+tmp2 <- tmp2[tmp2$date %in% tmp1$date, ]
+dateTmp <- tmp1 %>% 
+    select(date)
+dfDiff1 <- tibble(ID = rep("B3-S", count(dateTmp)))
+dfDiff1 <- add_column(dfDiff1, dateTmp)
+dfDiff1 <- add_column(dfDiff1, tmp1[ , 3:ncol(tmp1)] - tmp2[ , 3:ncol(tmp2)])
+
+dfDiff <-add_row(dfDiff, dfDiff1)
+
+#b4 - brine
+tmp1<-dfDataSel[which(dfDataSel$ID == "Bin4"), 1:10]
+tmp2<-dfDataSel[which(dfDataSel$ID == "brine"), 1:10]
+tmp1 <- tmp1[tmp1$date %in% tmp2$date, ]
+tmp2 <- tmp2[tmp2$date %in% tmp1$date, ]
+dateTmp <- tmp1 %>% 
+    select(date)
+dfDiff1 <- tibble(ID = rep("B4-S", count(dateTmp)))
+dfDiff1 <- add_column(dfDiff1, dateTmp)
+dfDiff1 <- add_column(dfDiff1, tmp1[ , 3:ncol(tmp1)] - tmp2[ , 3:ncol(tmp2)])
+
+dfDiff <-add_row(dfDiff, dfDiff1)
+
+save(dfDiff, file = "clean/diffData.rda")
