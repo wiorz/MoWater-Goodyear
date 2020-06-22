@@ -239,11 +239,12 @@ CombineDFFromSrcToTarget <- function(targetDF, sourceDF, diffIDTargetStr){
                     } 
                 }   
             }
-            message("\tfinished row ", irow) #status update due to slow program
+            message("\t\tfinished row ", irow) #status update due to slowness
         }
+        message("\tfinished col ", jcol)
     }
     message("Done with ", diffIDTargetStr) #added this because it's so sloooowww
-    return(dfDiff)
+    return(targetDF)
 }
 
 #Description: Grab data from the binIDStr which is the effluent bin in the 
@@ -270,8 +271,8 @@ tmpMatched <- dfDiff %>%
 #This appends the new columns with the data onto dfDiff.
 dfDiff <- left_join(dfDiff, tmpMatched)
 
-tmp <- GetBinEffluentData("Bin2", "B2-S")
-dfDiff <- CombineDFFromSrcToTarget(dfDiff, tmp, "B2-S")
+tmp <- GetBinEffluentData("Bin1", "B1-S")
+dfDiff <- CombineDFFromSrcToTarget(dfDiff, tmp, "B1-S")
 
 #SHOW/NAP TIME!!!!!
 #VERY SLOW program!!! Will require at least 5-10 mins depending on your machine.
@@ -305,8 +306,6 @@ for(curDiffID in unique(dfDiff$diff_ID)){
         
     } 
 }
-
-
 
 
 #Initialize the upcoming entry. Cannot use merge or join because the IDs will
@@ -1345,4 +1344,25 @@ range(dfDataSel$pH, na.rm = TRUE)
 
 #--------------------------
 
+GGPVarDiffByVeg<- function(dataset, varX, varY){
+    result <- dataset %>% 
+        ggplot(aes_string(varX, varY)) +
+        geom_point(alpha = 1, aes(color = diff_ID)) +
+        facet_wrap(~Veg, 4) + 
+        scale_color_brewer(palette = "Dark2") +
+        theme(
+            panel.background = element_rect(fill = "#BFD5E3", colour = "#6D9EC1",
+                                            size = 2, linetype = "solid"),
+            panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                            colour = "white"), 
+            panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                            colour = "white")
+        ) + 
+        ylab("Log of Selenium difference mg/L") + 
+        scale_y_continuous(trans = "log10")
+    
+    return(result)
+}
 
+plotSelDiff <- GGPVarDiffByVeg(dfDiff, "date", "diff_Selenium")
+plotSelDiff
