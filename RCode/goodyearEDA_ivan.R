@@ -318,7 +318,7 @@ save(dfDataSel, dfDataStLn, dfDiff, file = "clean/cleanedObjects.rda")
 #---------------------------------------------
 #Set functions here
 
-#NOTE: Do NOT use this! this function doesn't work yet!
+#@WARNING: Do NOT use this! this function doesn't work yet!
 #Description: perform t-test on a column of each bin (including brine).
 #Return: the object of t-test results
 #Assumptions: the column name exists in the dataset.
@@ -598,7 +598,9 @@ dfDataSelFlow %>%
 
 #----------------------------------------------
 
-#reordering boxplot
+#--- Boxplot ---
+
+# sample code for reordering boxplot
 # data$names <- factor(data$names , levels=c("A", "D", "C", "B"))
 # 
 # #The plot is now ordered !
@@ -954,7 +956,7 @@ binsTTest <- dfDataSel %>%
     add_significance()
 binsTTest
 
-
+save(binsTTest, file = "clean/ttestResults.rda")
 #-----------------------------------------------
 #density
 plotSelDen <- dfDataSel %>% 
@@ -989,7 +991,8 @@ save(mods, coefMat, rssMat, file = "clean/lmResults.rda")
 #-------------------------------------
 
 #--- graphs of time based facet models ---
-#Note: a visual look into 
+
+#This shows if the correlations changes base on vegetation type or train type.
 
 GGPSelVSVarByYear<- function(dataset, target){
     result <- dataset %>% 
