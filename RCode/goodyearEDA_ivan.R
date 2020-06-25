@@ -1,7 +1,10 @@
 
 
-setwd("Baylor/MoWater/proj6/MoWater-Goodyear")
-load("clean/goodyearMoWater0.rda" )
+#setwd("Baylor/MoWater/proj6/MoWater-Goodyear")
+load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/goodyearMoWater0.rda")
+#load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/goodyearMoWaterNew.rda")
+load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
+load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/lmResults.rda")
 ls()
 library( tidyverse); theme_set(theme_minimal())
 theme_update(panel.grid.minor = element_blank())
@@ -13,6 +16,7 @@ library( scales)
 library( rstatix)
 library( dplyr)
 library( ggpubr)
+library( emmeans)
 suppressMessages(library( fields))
 
 #head(goodyear)
@@ -1357,12 +1361,122 @@ GGPVarDiffByVeg<- function(dataset, varX, varY){
                                             colour = "white"), 
             panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
                                             colour = "white")
-        ) + 
-        ylab("Log of Selenium difference mg/L") + 
-        scale_y_continuous(trans = "log10")
+        )
     
     return(result)
 }
 
-plotSelDiff <- GGPVarDiffByVeg(dfDiff, "date", "diff_Selenium")
-plotSelDiff
+plotSelNitDiff <- GGPVarDiffByVeg(dfDiff, "diff_Nitrate", "diff_Selenium")
+plotSelNitDiff
+
+#diff_COD vs diff_Selenium
+plotSelCODDiff <- GGPVarDiffByVeg(dfDiff, "diff_COD", "diff_Selenium")
+plotSelCODDiff
+#Not much correlation
+
+#diff_Temp diff vs diff_Selenium
+plotSelTDDiff <- GGPVarDiffByVeg(dfDiff, "diff_Temp..Celsius", "diff_Selenium")
+plotSelTDDiff
+#no correlation?
+
+#Temp diff vs diff_Selenium
+plotSelTDiff <- GGPVarDiffByVeg(dfDiff, "Temp..Celsius", "diff_Selenium")
+plotSelTDiff
+#Still no correlation
+
+#DO vs diff_Selenium
+plotSelDODiff <- GGPVarDiffByVeg(dfDiff, "DO.mg.L", "diff_Selenium")
+plotSelDODiff
+#No correlation
+
+#------------------------------------------------
+
+#--- Clustering ---
+
+#Template/test run code
+#dfDiff %>% lm(Nitrate ~ diff_Selenium, data = .)
+
+#Apply lm but skip diff_ID, date, diff_Selenium (respond var) and Selenium.
+modsDiff <- lapply(dfDiff[ , c(5:10, 12:ncol(dfDiff))], 
+               function(x) summary(lm(dfDiff$diff_Selenium ~ x)))
+modsDiff
+
+#store the coeffcient of lm results
+coefDiffMat <- lapply( modsDiff, coef)
+coefDiffMat
+
+#store the r-squaredvalues
+rssDiffMat <- lapply( modsDiff, "[[", "r.squared")
+rssDiffMat
+
+save(modsDiff, coefDiffMat, rssDiffMat, file = "clean/lmDiffResults.rda")
+
+#Multivariate testing
+fit <- dfDataSel %>% 
+    lm( Selenium ~ Nitrate + COD, data = .)
+summary(fit)
+
+
+#--------------------------------------
+
+
+#----------------------------------------------
+
+mods
+
+fitAll <- dfDataSel %>% 
+        lm( Selenium ~ Nitrate + COD + DO.mg.L + pH + Veg + MediaType, data = .)
+summary(fitAll)
+#Adj R = 0.575
+
+fitVegDO <- dfDataSel %>% 
+    lm( Selenium ~ DO.mg.L + Veg, data = .)
+summary(fitVegDO)
+#Mult R = 0.2288
+
+fitVeg <- dfDataSel %>% 
+    lm( Selenium ~ COD + DO.mg.L + Veg, data = .)
+summary(fitVeg)
+predict(fitVeg)
+#Adj R = 0.489
+
+# See the result
+df3 %>% as.data.frame()
+
+fitVegMedia <- dfDataSel %>% 
+    lm( Selenium ~ COD + DO.mg.L + Veg + MediaType, data = .)
+summary(fitVegMedia)
+#Adj R = 0.593
+
+fitMedia <- dfDataSel %>% 
+    lm( Selenium ~ COD + DO.mg.L + pH + Nitrate + MediaType, data = .)
+summary(fitMedia)
+#Adj R = 0.403
+
+fitVegMediaWpH <- dfDataSel %>% 
+    lm( Selenium ~ COD + DO.mg.L + pH + Veg + MediaType, data = .)
+summary(fitVegMediaWpH)
+#Adj R = 0.576
+
+fitVegMediaWNit <- dfDataSel %>% 
+    lm( Selenium ~ COD + DO.mg.L + Nitrate + Veg + MediaType, data = .)
+summary(fitVegMediaWNit)
+#Adj R = 0.599
+
+fitAllTypes <- dfDataSel %>% 
+    lm( Selenium ~ COD + DO.mg.L + Veg + MediaType + ID + TrainGroup, data = .)
+summary(fitAllTypes)
+#Adj R = 0.5432
+
+fitDiff <- dfDataSel %>% 
+    lm( Selenium ~ Nitrate + COD + DO.mg.L + pH + Veg + MediaType, data = .)
+summary(fitDiff)
+
+
+modelDO <- lm(Selenium ~ DO.mg.L + ID, data = dfDataSel)
+modelDO.metrics <- augment(modelDO) %>%
+    select(-.hat, -.sigma, -.fitted, -.se.fit) # Remove details
+modelDO
+
+#------------------------------------------------------
+
