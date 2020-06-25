@@ -1,0 +1,142 @@
+---
+title: "Goodyear_WorkEx"
+author: "MoWater Goodyear Team"
+date: "6/23/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-packages, message=FALSE}
+library( tidyverse); theme_set(theme_minimal())
+theme_update(panel.grid.minor = element_blank())
+library( lubridate)
+library( rcartocolor)
+library( RColorBrewer)
+library( viridis)
+library( scales)
+library( rstatix)
+library( dplyr)
+library( ggpubr)
+suppressMessages(library( fields))
+```
+
+
+Ivan Ko
+Blake Loosley
+Lauren Varnado
+
+MoWater
+
+\begin{center}
+Goodyear Artificial Wetland Project
+\end{center}
+
+```{r file_loading echo=FALSE}
+#NOTE: Change loading folder!
+setwd("Baylor/MoWater/proj6/MoWater-Goodyear")
+#NOTE2: this rda is the one without the < values.
+load("clean/goodyearMoWater0.rda" )
+```
+
+
+```{r data_prep_and_cleaning warning=FALSE, echo = FALSE}
+#train change date: relevant for bin 2 and 4. 
+#Before the change, bin 2 is train 3,
+#This can be our starting date since we will only be ignoring 8 months of data.
+trainChangeDate <- ymd( "2011-06-15")
+
+#last date for shortcut, the +1 is for adapting to use with functions due to the
+#   comparison (< lastdate).
+lastDate <- tail(dfDataSel$date, n = 1) + 1
+
+#unstable periods
+unstablePeriodStart <- ymd( "2014-04-01")
+unstablePeriodEnd <- ymd( "2016-01-01") #rough est. according to Kate (stakeholder)
+
+#Note: 2015-04-01 may be set to 2015-01-01 because the data doesn't look right.
+#There's a spike in data around Jan 2015 that should be grouped with the next 
+# performance period,hence this choice.
+
+#set periods: most bins have different perfmance periods!
+#bin1, 5, 6, 7
+bin1567Period1End <- ymd( "2012-03-01")
+bin1567Period2End <- ymd( "2015-04-01")
+bin1567Period3End <- ymd( "2017-04-01")
+bin1567Periods <- c(bin1567Period1End, bin1567Period2End, bin1567Period3End)
+
+#periods for bin2
+bin2Period1End <- ymd( "2015-04-01")
+bin2Period2End <- ymd( "2017-04-01")
+bin2Periods <- c(bin2Period1End, bin2Period2End)
+
+#periods for bin3, bin4
+bin34Period1End <- ymd( "2015-04-01")
+bin34Period2End <- ymd( "2016-12-01")
+bin34Periods <- c(bin34Period1End, bin34Period2End)
+
+#Outliers to be removed, bad data points!
+# maybe  use c() so we can add more dates later
+removeDates <- ymd("2011-07-22")
+
+#----------------------------------------
+
+dfData <- dfData[!(is.na(dfData$date)), ] # also clean goodyear here
+
+dfData <- as_tibble(goodyear)
+
+#With data from only stable periods
+dfDataSt <- dfData %>% 
+                filter( date >= trainChangeDate & 
+                            date <= unstablePeriodStart |
+                            date >= unstablePeriodEnd) 
+
+#Remove the confirmed outliers
+#Can also use subset(): i.e. subset(df, B != )
+dfDataSt <- filter(dfDataSt, date != removeDates)
+
+#Identify and remove the row with very low selenium from brine
+lowBrineSel <- dfDataSt %>% 
+    filter(ID == "brine") %>% 
+    slice(which.min(Selenium))
+dfDataSt <- filter(dfDataSt, date != lowBrineSel$date)
+
+highPho <- dfDataSt %>% 
+    slice(which.max(Phosphorus))
+dfDataSt <- filter(dfDataSt, date != highPho$date)
+
+
+#lean data with mainly relevant variables 
+dfDataStLn <- dfDataSt %>% 
+                select(ID, date, Selenium, Arsenic, Nitrate, Phosphorus, 
+                       COD, DO.mg.L, pH, Temp..Celsius)
+
+#Add new column TrainGroup base on the ID
+dfDataStLn$TrainGroup <- ifelse(dfDataStLn$ID == "Bin1"| dfDataStLn$ID == "Bin5" |
+                                    dfDataStLn$ID == "Bin7", "Train 1",
+                              ifelse(dfDataStLn$ID == "Bin2" | 
+                                         dfDataStLn$ID == "Bin6", "Train 2", 
+                                     ifelse(dfDataStLn$ID == "Bin4", "Train 3", 
+                                            ifelse(dfDataStLn$ID == "Bin3", 
+                                                   "Train 4", "Brine"))))
+
+#Add new column Vegetation base on the ID
+dfDataStLn$Veg <- ifelse(dfDataStLn$ID == "Bin2", "VegType B",
+                              ifelse(dfDataStLn$ID == "Bin6" | 
+                                         dfDataStLn$ID == "Bin7", "VegType C", 
+                                     "VegType A"))
+
+#Added new column for media type base on ID
+dfDataStLn$MediaType <- ifelse(dfDataStLn$ID == "Bin7", "Soil",
+                                ifelse(dfDataStLn$ID == "Bin1" | 
+                                           dfDataStLn$ID == "Bin1", "MM", 
+                                       ifelse(dfDataStLn$ID == "Bin4", "GW", 
+                                              "PM")))
+
+#Data with Selenium focus, removing all NA rows from Selenium
+dfDataSel <- dfDataStLn[!is.na(dfDataStLn$Selenium), ]
+```
+
+
