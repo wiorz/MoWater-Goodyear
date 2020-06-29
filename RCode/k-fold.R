@@ -1,5 +1,0 @@
-load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
-load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/complete_cases.rda")
-load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/tshirt-wave.rda")
-library(tidyverse); theme_set(theme_minimal())
-theme_update(panel.grid.minor = element_blank())
