@@ -268,7 +268,7 @@ GetBinEffluentData <- function(binIDStr, diffIDStr){
 #Initialize dfDiff so that it'd work for the function.
 #This is important! If this step fails then the entire thing fails.
 #Basically, add all the new columns into dfDiff on the first run.
-tmp <- GetBinEffluentData("Bin1", curDiffID)
+
 #This gets us the dataframe with the diff_columns and the effluent point
 #columns
 tmpMatched <- dfDiff %>% 
@@ -319,7 +319,8 @@ for(curDiffID in unique(dfDiff$diff_ID)){
 # not match even tho date does.
 
 
-save(dfDataSel, dfDataStLn, dfDiff, file = "clean/cleanedObjects.rda")
+save(dfDataSel, dfDataStLn, dfDiff, 
+     file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
 
 #---------------------------------------------
 #Set functions here
