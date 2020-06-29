@@ -103,30 +103,33 @@ dfDataStLn <- dfDataSt %>%
 
 #Add new column TrainGroup base on the ID
 dfDataStLn$TrainGroup <- ifelse(dfDataStLn$ID == "Bin1"| dfDataStLn$ID == "Bin5" |
-                                    dfDataStLn$ID == "Bin7", "Train 1",
+                                    dfDataStLn$ID == "Bin7", "Train_1",
                               ifelse(dfDataStLn$ID == "Bin2" | 
-                                         dfDataStLn$ID == "Bin6", "Train 2", 
-                                     ifelse(dfDataStLn$ID == "Bin4", "Train 3", 
+                                         dfDataStLn$ID == "Bin6", "Train_2", 
+                                     ifelse(dfDataStLn$ID == "Bin4", "Train_3", 
                                             ifelse(dfDataStLn$ID == "Bin3", 
-                                                   "Train 4", "Brine"))))
+                                                   "Train_4", "Brine"))))
 
 #Add new column Vegetation base on the ID
-dfDataStLn$Veg <- ifelse(dfDataStLn$ID == "Bin2", "VegType B",
+dfDataStLn$Veg <- ifelse(dfDataStLn$ID == "Bin2", "VegType_B",
                               ifelse(dfDataStLn$ID == "Bin6" | 
-                                         dfDataStLn$ID == "Bin7", "VegType C", 
-                                     "VegType A"))
+                                         dfDataStLn$ID == "Bin7", "VegType_C", 
+                                            ifelse(dfDataStLn$ID == "brine", 
+                                                   "brine", "VegType_A")))
 
 #Added new column for media type base on ID
 dfDataStLn$MediaType <- ifelse(dfDataStLn$ID == "Bin7", "Soil",
                                 ifelse(dfDataStLn$ID == "Bin1" | 
                                            dfDataStLn$ID == "Bin1", "MM", 
                                        ifelse(dfDataStLn$ID == "Bin4", "GW", 
-                                              "PM")))
+                                              ifelse(dfDataStLn$ID == "brine", 
+                                                     "brine", "PM"))))
 
 #Data with Selenium focus, removing all NA rows from Selenium
 dfDataSel <- dfDataStLn[!is.na(dfDataStLn$Selenium), ]
 
-save(dfDataSel, dfDataStLn, file = "clean/cleanedObjects.rda")
+save(dfDataSel, dfDataStLn, 
+     file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
 
 #------------------------------------------------
 
