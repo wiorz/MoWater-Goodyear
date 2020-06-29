@@ -1,7 +1,10 @@
 
 
-setwd("Baylor/MoWater/proj6/MoWater-Goodyear")
-load("clean/goodyearMoWater0.rda" )
+#setwd("Baylor/MoWater/proj6/MoWater-Goodyear")
+load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/goodyearMoWater0.rda")
+#load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/goodyearMoWaterNew.rda")
+load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
+load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/lmResults.rda")
 ls()
 library( tidyverse); theme_set(theme_minimal())
 theme_update(panel.grid.minor = element_blank())
@@ -13,6 +16,7 @@ library( scales)
 library( rstatix)
 library( dplyr)
 library( ggpubr)
+library( emmeans)
 suppressMessages(library( fields))
 
 #head(goodyear)
@@ -99,36 +103,228 @@ dfDataStLn <- dfDataSt %>%
 
 #Add new column TrainGroup base on the ID
 dfDataStLn$TrainGroup <- ifelse(dfDataStLn$ID == "Bin1"| dfDataStLn$ID == "Bin5" |
-                                    dfDataStLn$ID == "Bin7", "Train 1",
+                                    dfDataStLn$ID == "Bin7", "Train_1",
                               ifelse(dfDataStLn$ID == "Bin2" | 
-                                         dfDataStLn$ID == "Bin6", "Train 2", 
-                                     ifelse(dfDataStLn$ID == "Bin4", "Train 3", 
+                                         dfDataStLn$ID == "Bin6", "Train_2", 
+                                     ifelse(dfDataStLn$ID == "Bin4", "Train_3", 
                                             ifelse(dfDataStLn$ID == "Bin3", 
-                                                   "Train 4", "Brine"))))
+                                                   "Train_4", "Brine"))))
 
 #Add new column Vegetation base on the ID
-dfDataStLn$Veg <- ifelse(dfDataStLn$ID == "Bin2", "VegType B",
-                              ifelse(dfDataStLn$ID == "VegBin6" | 
-                                         dfDataStLn$ID == "Bin7", "VegType C", 
-                                     "VegType A"))
+dfDataStLn$Veg <- ifelse(dfDataStLn$ID == "Bin2", "VegType_B",
+                              ifelse(dfDataStLn$ID == "Bin6" | 
+                                         dfDataStLn$ID == "Bin7", "VegType_C", 
+                                            ifelse(dfDataStLn$ID == "brine", 
+                                                   "brine", "VegType_A")))
 
 #Added new column for media type base on ID
 dfDataStLn$MediaType <- ifelse(dfDataStLn$ID == "Bin7", "Soil",
                                 ifelse(dfDataStLn$ID == "Bin1" | 
                                            dfDataStLn$ID == "Bin1", "MM", 
                                        ifelse(dfDataStLn$ID == "Bin4", "GW", 
-                                              "PM")))
+                                              ifelse(dfDataStLn$ID == "brine", 
+                                                     "brine", "PM"))))
 
 #Data with Selenium focus, removing all NA rows from Selenium
 dfDataSel <- dfDataStLn[!is.na(dfDataStLn$Selenium), ]
 
-save(dfDataSel, dfDataStLn, file = "clean/cleanedObjects.rda")
+save(dfDataSel, dfDataStLn, 
+     file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
 
+#------------------------------------------------
+
+#--- Make data object for the difference between influent and effluent ---
+
+#NOTE: This function assumes dfDataSel exists!
+#NOTE2: Requires the dataTarget having been initialized with the matching 
+#       column names
+AddMatchingInfoToDF <- function(dataTarget, influentStr, effluentStr, nameStr){
+    #First get the respective dataframes. The 1:10 columns are the variables we
+    #are interested in,can be expanded or subtract. Hardcoded because no reason to
+    #change here.
+    tmp1<-dfDataSel[which(dfDataSel$ID == effluentStr), 1:10]
+    tmp2<-dfDataSel[which(dfDataSel$ID == influentStr), 1:10]
+    
+    #The following 2 steps force-match the size (row numbers) of the two
+    #datasets to be the same
+    tmp1 <- tmp1[tmp1$date %in% tmp2$date, ] 
+    tmp2 <- tmp2[tmp2$date %in% tmp1$date, ]
+    
+    #The results of subtraction willbe stored into a new dataframe.
+    #Get a date column first, then add more columns to it next.
+    dateTmp <- tmp1 %>% 
+        select(date)
+    dfDiff1 <- tibble(ID = rep(nameStr, count(dateTmp)))
+    #Adding the results as column to the new dataframe
+    dfDiff1 <- add_column(dfDiff1, dateTmp)
+    dfDiff1 <- add_column(dfDiff1, tmp1[ , 3:ncol(tmp1)] - tmp2[ , 3:ncol(tmp2)])
+    
+    dataTarget <-add_row(dataTarget, dfDiff1)    
+    
+    return (dataTarget) #return otherwise progress is lost in scope
+}
+
+#NOTE: this initialization step is required for using the function!
+#add date
+#Note: using dfData because other dataset may not have matching sizes
+dateTmp <- dfDataSel %>% 
+    filter(ID == "Bin1") %>% 
+    select(date)
+
+#Init base for brine to bin1
+dfDiff <- tibble(ID = rep("B1-S", count(dateTmp)))
+dfDiff <- add_column(dfDiff, dateTmp)
+
+tmp1<-dfDataSel[which(dfDataSel$ID == "Bin1"), 2:10]
+tmp2<-dfDataSel[which(dfDataSel$ID == "brine"), 2:10]
+dfDiff <- add_column(dfDiff, tmp1[ , 2:ncol(tmp1)] - tmp2[ , 2:ncol(tmp2)])
+
+#b1 to b5
+dfDiff <- AddMatchingInfoToDF(dfDiff, "Bin5", "Bin1", "B5-B1")
+
+#b5 to b7
+dfDiff <- AddMatchingInfoToDF(dfDiff, "Bin7", "Bin5", "B7-B5")
+
+#b2 - brine
+dfDiff <- AddMatchingInfoToDF(dfDiff, "Bin2", "brine", "B2-S")
+
+#b6 - b2
+dfDiff <- AddMatchingInfoToDF(dfDiff, "Bin6", "Bin2", "B6-B2")
+
+#b3 - brine
+dfDiff <- AddMatchingInfoToDF(dfDiff, "Bin3", "brine", "B3-S")
+
+#b4 - brine
+dfDiff <- AddMatchingInfoToDF(dfDiff, "Bin4", "brine", "B4-S")
+
+#renaming so that the data won't get overwritten in the next part.
+dfDiff <- dfDiff %>% 
+        rename(diff_ID = ID) %>% 
+        rename(diff_Selenium = Selenium) %>% 
+        rename(diff_Arsenic = Arsenic) %>% 
+        rename(diff_Nitrate = Nitrate) %>% 
+        rename(diff_Phosphorus = Phosphorus) %>% 
+        rename(diff_COD = COD) %>% 
+        rename(diff_DO.mg.L = DO.mg.L) %>% 
+        rename(diff_pH = pH) %>% 
+        rename(diff_Temp..Celsius = Temp..Celsius) 
+
+#--------------
+#--- Second part of diff data, adding the effluent values ---
+
+#TODO: refactor this into something like efficient and R-like if have time.
+#WARNING: SLOW program! Don't run this 
+#Description: Combine sourceDF's values into targetDf's, and return the targetDf. 
+#   Add values from the sourceDF to targetDF.
+#   Hard-coded some values, specifically, looking at date and the diff_IDs.
+#   
+#Return: the result dataframe.
+#Assumptions: dfDataSel exists and has the target IDs looking for.
+#               targetDF exists and has the matching date and diff_IDs.
+#               NOTE: targetDF needs to have the columns that sourceDF has,
+#                       but the sourceDF should ONLY has the columns we want to 
+#                       add to targetDF. So if targetDF has date, col1, col2,
+#                       but we only want to change col2, then sourceDF should
+#                       only has date and col2. 
+#Input: two valid daaframes,and a string that is value of the diff_ID rows.
+#Example:
+#       CombineDFFromSrcToTarget(dfDiff, tmp3, "B3-S")
+#           This will add the values from tmp3 to dfDiff, matching with diff_ID 
+#           that has B3-S values, and based on the shared date entries in both
+#           files.
+
+CombineDFFromSrcToTarget <- function(targetDF, sourceDF, diffIDTargetStr){
+    for(jcol in colnames(sourceDF)){
+        #The next logical check skips adding values on the date column.
+        if(jcol != "date"){
+            #Find the matching IDs
+            for(irow in which(targetDF$diff_ID == diffIDTargetStr)){
+                for(jrow in 1 : nrow(sourceDF)){
+                    #Find the matching dates, then set targetDF value
+                    if(targetDF[irow, "date"] == sourceDF[jrow, "date"]){
+                        targetDF[irow, jcol] <- sourceDF[jrow, jcol] 
+                    } 
+                }   
+            }
+            message("\t\tfinished row ", irow) #status update due to slowness
+        }
+        message("\tfinished col ", jcol)
+    }
+    message("Done with ", diffIDTargetStr) #added this because it's so sloooowww
+    return(targetDF)
+}
+
+#Description: Grab data from the binIDStr which is the effluent bin in the 
+#               diffIDStr, and return that dataframe with the relevant columns.
+#Return: dataframe with the relevant columns with matching IDs
+#Assumptions: dfDataSel and dfDiff exists and has the values we need.
+GetBinEffluentData <- function(binIDStr, diffIDStr){
+    result <- dfDataSel[which(dfDataSel$ID == binIDStr), 2:ncol(dfDataSel)]
+    matchDate <- dfDiff[which(dfDiff$diff_ID == diffIDStr), 2]
+    result <- result[result$date %in% matchDate$date, ]
+    return(result)
+}
+
+#Initialize dfDiff so that it'd work for the function.
+#This is important! If this step fails then the entire thing fails.
+#Basically, add all the new columns into dfDiff on the first run.
+tmp <- GetBinEffluentData("Bin1", curDiffID)
+#This gets us the dataframe with the diff_columns and the effluent point
+#columns
+tmpMatched <- dfDiff %>% 
+    filter(diff_ID == curDiffID) %>% 
+    left_join(tmp, by = "date")
+
+#This appends the new columns with the data onto dfDiff.
+dfDiff <- left_join(dfDiff, tmpMatched)
+
+tmp <- GetBinEffluentData("Bin1", "B1-S")
+dfDiff <- CombineDFFromSrcToTarget(dfDiff, tmp, "B1-S")
+
+#SHOW/NAP TIME!!!!!
+#VERY SLOW program!!! Will require at least 5-10 mins depending on your machine.
+for(curDiffID in unique(dfDiff$diff_ID)){
+    if(curDiffID != "B1-S"){
+        #Stupid case switches using if else chains -_-;;;
+        if(curDiffID == "B2-S"){
+            tmp <- GetBinEffluentData("Bin2", curDiffID)
+            dfDiff <- CombineDFFromSrcToTarget(dfDiff, tmp, curDiffID)
+        }
+        if(curDiffID == "B3-S"){
+            tmp <- GetBinEffluentData("Bin3", curDiffID)
+            dfDiff <- CombineDFFromSrcToTarget(dfDiff, tmp, curDiffID)
+        }
+        if(curDiffID == "B4-S"){
+            tmp <- GetBinEffluentData("Bin4", curDiffID)
+            dfDiff <- CombineDFFromSrcToTarget(dfDiff, tmp, curDiffID)
+        }
+        if(curDiffID == "B5-B1"){
+            tmp <- GetBinEffluentData("Bin5", curDiffID)
+            dfDiff <- CombineDFFromSrcToTarget(dfDiff, tmp, curDiffID)
+        }
+        if(curDiffID == "B7-B5"){
+            tmp <- GetBinEffluentData("Bin7", curDiffID)
+            dfDiff <- CombineDFFromSrcToTarget(dfDiff, tmp, curDiffID)
+        }
+        if(curDiffID == "B6-B2"){
+            tmp <- GetBinEffluentData("Bin6", curDiffID)
+            dfDiff <- CombineDFFromSrcToTarget(dfDiff, tmp, curDiffID)
+        }
+        
+    } 
+}
+
+
+#Initialize the upcoming entry. Cannot use merge or join because the IDs will
+# not match even tho date does.
+
+
+save(dfDataSel, dfDataStLn, dfDiff, file = "clean/cleanedObjects.rda")
 
 #---------------------------------------------
 #Set functions here
 
-#NOTE: Do NOT use this! this function doesn't work yet!
+#@WARNING: Do NOT use this! this function doesn't work yet!
 #Description: perform t-test on a column of each bin (including brine).
 #Return: the object of t-test results
 #Assumptions: the column name exists in the dataset.
@@ -408,7 +604,9 @@ dfDataSelFlow %>%
 
 #----------------------------------------------
 
-#reordering boxplot
+#--- Boxplot ---
+
+# sample code for reordering boxplot
 # data$names <- factor(data$names , levels=c("A", "D", "C", "B"))
 # 
 # #The plot is now ordered !
@@ -764,7 +962,7 @@ binsTTest <- dfDataSel %>%
     add_significance()
 binsTTest
 
-
+save(binsTTest, file = "clean/ttestResults.rda")
 #-----------------------------------------------
 #density
 plotSelDen <- dfDataSel %>% 
@@ -799,7 +997,8 @@ save(mods, coefMat, rssMat, file = "clean/lmResults.rda")
 #-------------------------------------
 
 #--- graphs of time based facet models ---
-#Note: a visual look into 
+
+#This shows if the correlations changes base on vegetation type or train type.
 
 GGPSelVSVarByYear<- function(dataset, target){
     result <- dataset %>% 
@@ -1102,7 +1301,7 @@ ggsave(filename = "Images/Veg Type Analysis of Selenium vs Nitrate base on Bin 2
 
 #--- vs plots
 #Nitrate
-plotNitvs <- ggarrange(plotTrainVegSelvNit, plotBinVegStabSelvNit, nrow = 2, 
+plotNitvs <- ggarrange(plotTrainVegSelvNit, plotBinVegStabSelvNit, ncol = 2, 
                               common.legend = FALSE)
 plotNitvs
 ggsave(filename = "Images/Veg Type compare Nitrate.png", 
@@ -1110,7 +1309,7 @@ ggsave(filename = "Images/Veg Type compare Nitrate.png",
        width = 42.3, height = 23.15, units = "cm", device='png')
 
 #COD
-plotCODvs <- ggarrange(plotTrainVegSelvCOD, plotBinVegStabSelvCOD, nrow = 2, 
+plotCODvs <- ggarrange(plotTrainVegSelvCOD, plotBinVegStabSelvCOD, ncol = 2, 
                        common.legend = FALSE)
 plotCODvs
 ggsave(filename = "Images/Veg Type compare COD.png", 
@@ -1118,7 +1317,7 @@ ggsave(filename = "Images/Veg Type compare COD.png",
        width = 42.3, height = 23.15, units = "cm", device='png')
 
 #DO
-plotDOvs <- ggarrange(plotTrainVegSelvDO, plotBinVegStabSelvDO, nrow = 2, 
+plotDOvs <- ggarrange(plotTrainVegSelvDO, plotBinVegStabSelvDO, ncol = 2, 
                        common.legend = FALSE)
 plotDOvs
 ggsave(filename = "Images/Veg Type compare DO.png", 
@@ -1126,7 +1325,7 @@ ggsave(filename = "Images/Veg Type compare DO.png",
        width = 42.3, height = 23.15, units = "cm", device='png')
 
 #Temp
-plotTvs <- ggarrange(plotTrainVegSelvT, plotBinVegStabSelvT, nrow = 2, 
+plotTvs <- ggarrange(plotTrainVegSelvT, plotBinVegStabSelvT, ncol = 2, 
                        common.legend = FALSE)
 plotTvs
 ggsave(filename = "Images/Veg Type compare Temp.png", 
@@ -1134,7 +1333,7 @@ ggsave(filename = "Images/Veg Type compare Temp.png",
        width = 42.3, height = 23.15, units = "cm", device='png')
 
 #pH
-plotpHvs <- ggarrange(plotTrainVegSelvpH, plotBinVegStabSelvpH, nrow = 2, 
+plotpHvs <- ggarrange(plotTrainVegSelvpH, plotBinVegStabSelvpH, ncol = 2, 
                      common.legend = FALSE)
 plotpHvs
 ggsave(filename = "Images/Veg Type compare pH.png", 
@@ -1152,101 +1351,135 @@ range(dfDataSel$pH, na.rm = TRUE)
 
 #--------------------------
 
-#--- Make data object for the difference between influent and effluent ---
+GGPVarDiffByVeg<- function(dataset, varX, varY){
+    result <- dataset %>% 
+        ggplot(aes_string(varX, varY)) +
+        geom_point(alpha = 1, aes(color = diff_ID)) +
+        facet_wrap(~Veg, 4) + 
+        scale_color_brewer(palette = "Dark2") +
+        theme(
+            panel.background = element_rect(fill = "#BFD5E3", colour = "#6D9EC1",
+                                            size = 2, linetype = "solid"),
+            panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                            colour = "white"), 
+            panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                            colour = "white")
+        )
+    
+    return(result)
+}
 
-#add date
-#Note: using dfData because other dataset may not have matching sizes
-dateTmp <- dfDataSel %>% 
-            filter(ID == "Bin1") %>% 
-            select(date)
+plotSelNitDiff <- GGPVarDiffByVeg(dfDiff, "diff_Nitrate", "diff_Selenium")
+plotSelNitDiff
 
-#Init base for brine to bin1
-dfDiff <- tibble(ID = rep("B1-S", count(dateTmp)))
-dfDiff <- add_column(dfDiff, dateTmp)
+#diff_COD vs diff_Selenium
+plotSelCODDiff <- GGPVarDiffByVeg(dfDiff, "diff_COD", "diff_Selenium")
+plotSelCODDiff
+#Not much correlation
 
-tmp1<-dfDataSel[which(dfDataSel$ID == "Bin1"), 2:10]
-tmp2<-dfDataSel[which(dfDataSel$ID == "brine"), 2:10]
-dfDiff <- add_column(dfDiff, tmp1[ , 2:ncol(tmp1)] - tmp2[ , 2:ncol(tmp2)])
+#diff_Temp diff vs diff_Selenium
+plotSelTDDiff <- GGPVarDiffByVeg(dfDiff, "diff_Temp..Celsius", "diff_Selenium")
+plotSelTDDiff
+#no correlation?
 
-#b1 to b5
+#Temp diff vs diff_Selenium
+plotSelTDiff <- GGPVarDiffByVeg(dfDiff, "Temp..Celsius", "diff_Selenium")
+plotSelTDiff
+#Still no correlation
 
-tmp1<-dfDataSel[which(dfDataSel$ID == "Bin5"), 1:10]
-tmp2<-dfDataSel[which(dfDataSel$ID == "Bin1"), 1:10]
-tmp1 <- tmp1[tmp1$date %in% tmp2$date, ]
-tmp2 <- tmp2[tmp2$date %in% tmp1$date, ]
+#DO vs diff_Selenium
+plotSelDODiff <- GGPVarDiffByVeg(dfDiff, "DO.mg.L", "diff_Selenium")
+plotSelDODiff
+#No correlation
 
-dateTmp <- tmp1 %>% 
-        select(date)
-dfDiff1 <- tibble(ID = rep("B5-B1", count(dateTmp)))
-dfDiff1 <- add_column(dfDiff1, dateTmp)
-dfDiff1 <- add_column(dfDiff1, tmp1[ , 3:ncol(tmp1)] - tmp2[ , 3:ncol(tmp2)])
+#------------------------------------------------
 
-dfDiff <-add_row(dfDiff, dfDiff1)
+#--- Clustering ---
 
-#b5 to b7
-tmp1<-dfDataSel[which(dfDataSel$ID == "Bin7"), 1:10]
-tmp2<-dfDataSel[which(dfDataSel$ID == "Bin5"), 1:10]
-tmp1 <- tmp1[tmp1$date %in% tmp2$date, ]
-tmp2 <- tmp2[tmp2$date %in% tmp1$date, ]
+#Template/test run code
+#dfDiff %>% lm(Nitrate ~ diff_Selenium, data = .)
 
-dateTmp <- tmp1 %>% 
-    select(date)
-dfDiff1 <- tibble(ID = rep("B7-B5", count(dateTmp)))
-dfDiff1 <- add_column(dfDiff1, dateTmp)
-dfDiff1 <- add_column(dfDiff1, tmp1[ , 3:ncol(tmp1)] - tmp2[ , 3:ncol(tmp2)])
+#Apply lm but skip diff_ID, date, diff_Selenium (respond var) and Selenium.
+modsDiff <- lapply(dfDiff[ , c(5:10, 12:ncol(dfDiff))], 
+               function(x) summary(lm(dfDiff$diff_Selenium ~ x)))
+modsDiff
 
-dfDiff <-add_row(dfDiff, dfDiff1)
+#store the coeffcient of lm results
+coefDiffMat <- lapply( modsDiff, coef)
+coefDiffMat
 
-#b2 - brine
-tmp1<-dfDataSel[which(dfDataSel$ID == "Bin2"), 1:10]
-tmp2<-dfDataSel[which(dfDataSel$ID == "brine"), 1:10]
-tmp1 <- tmp1[tmp1$date %in% tmp2$date, ]
-tmp2 <- tmp2[tmp2$date %in% tmp1$date, ]
-dateTmp <- tmp1 %>% 
-    select(date)
-dfDiff1 <- tibble(ID = rep("B2-S", count(dateTmp)))
-dfDiff1 <- add_column(dfDiff1, dateTmp)
-dfDiff1 <- add_column(dfDiff1, tmp1[ , 3:ncol(tmp1)] - tmp2[ , 3:ncol(tmp2)])
+#store the r-squaredvalues
+rssDiffMat <- lapply( modsDiff, "[[", "r.squared")
+rssDiffMat
 
-dfDiff <-add_row(dfDiff, dfDiff1)
+save(modsDiff, coefDiffMat, rssDiffMat, file = "clean/lmDiffResults.rda")
 
-#b6 - b2
-tmp1<-dfDataSel[which(dfDataSel$ID == "Bin6"), 1:10]
-tmp2<-dfDataSel[which(dfDataSel$ID == "Bin2"), 1:10]
-tmp1 <- tmp1[tmp1$date %in% tmp2$date, ]
-tmp2 <- tmp2[tmp2$date %in% tmp1$date, ]
-dateTmp <- tmp1 %>% 
-    select(date)
-dfDiff1 <- tibble(ID = rep("B6-B2", count(dateTmp)))
-dfDiff1 <- add_column(dfDiff1, dateTmp)
-dfDiff1 <- add_column(dfDiff1, tmp1[ , 3:ncol(tmp1)] - tmp2[ , 3:ncol(tmp2)])
+#Multivariate testing
+fit <- dfDataSel %>% 
+    lm( Selenium ~ Nitrate + COD, data = .)
+summary(fit)
 
-dfDiff <-add_row(dfDiff, dfDiff1)
 
-#b3 - brine
-tmp1<-dfDataSel[which(dfDataSel$ID == "Bin3"), 1:10]
-tmp2<-dfDataSel[which(dfDataSel$ID == "brine"), 1:10]
-tmp1 <- tmp1[tmp1$date %in% tmp2$date, ]
-tmp2 <- tmp2[tmp2$date %in% tmp1$date, ]
-dateTmp <- tmp1 %>% 
-    select(date)
-dfDiff1 <- tibble(ID = rep("B3-S", count(dateTmp)))
-dfDiff1 <- add_column(dfDiff1, dateTmp)
-dfDiff1 <- add_column(dfDiff1, tmp1[ , 3:ncol(tmp1)] - tmp2[ , 3:ncol(tmp2)])
+#--------------------------------------
 
-dfDiff <-add_row(dfDiff, dfDiff1)
 
-#b4 - brine
-tmp1<-dfDataSel[which(dfDataSel$ID == "Bin4"), 1:10]
-tmp2<-dfDataSel[which(dfDataSel$ID == "brine"), 1:10]
-tmp1 <- tmp1[tmp1$date %in% tmp2$date, ]
-tmp2 <- tmp2[tmp2$date %in% tmp1$date, ]
-dateTmp <- tmp1 %>% 
-    select(date)
-dfDiff1 <- tibble(ID = rep("B4-S", count(dateTmp)))
-dfDiff1 <- add_column(dfDiff1, dateTmp)
-dfDiff1 <- add_column(dfDiff1, tmp1[ , 3:ncol(tmp1)] - tmp2[ , 3:ncol(tmp2)])
+#----------------------------------------------
 
-dfDiff <-add_row(dfDiff, dfDiff1)
+mods
 
-save(dfDiff, file = "clean/diffData.rda")
+fitAll <- dfDataSel %>% 
+        lm( Selenium ~ Nitrate + COD + DO.mg.L + pH + Veg + MediaType, data = .)
+summary(fitAll)
+#Adj R = 0.575
+
+fitVegDO <- dfDataSel %>% 
+    lm( Selenium ~ DO.mg.L + Veg, data = .)
+summary(fitVegDO)
+#Mult R = 0.2288
+
+fitVeg <- dfDataSel %>% 
+    lm( Selenium ~ COD + DO.mg.L + Veg, data = .)
+summary(fitVeg)
+predict(fitVeg)
+#Adj R = 0.489
+
+# See the result
+df3 %>% as.data.frame()
+
+fitVegMedia <- dfDataSel %>% 
+    lm( Selenium ~ COD + DO.mg.L + Veg + MediaType, data = .)
+summary(fitVegMedia)
+#Adj R = 0.593
+
+fitMedia <- dfDataSel %>% 
+    lm( Selenium ~ COD + DO.mg.L + pH + Nitrate + MediaType, data = .)
+summary(fitMedia)
+#Adj R = 0.403
+
+fitVegMediaWpH <- dfDataSel %>% 
+    lm( Selenium ~ COD + DO.mg.L + pH + Veg + MediaType, data = .)
+summary(fitVegMediaWpH)
+#Adj R = 0.576
+
+fitVegMediaWNit <- dfDataSel %>% 
+    lm( Selenium ~ COD + DO.mg.L + Nitrate + Veg + MediaType, data = .)
+summary(fitVegMediaWNit)
+#Adj R = 0.599
+
+fitAllTypes <- dfDataSel %>% 
+    lm( Selenium ~ COD + DO.mg.L + Veg + MediaType + ID + TrainGroup, data = .)
+summary(fitAllTypes)
+#Adj R = 0.5432
+
+fitDiff <- dfDataSel %>% 
+    lm( Selenium ~ Nitrate + COD + DO.mg.L + pH + Veg + MediaType, data = .)
+summary(fitDiff)
+
+
+modelDO <- lm(Selenium ~ DO.mg.L + ID, data = dfDataSel)
+modelDO.metrics <- augment(modelDO) %>%
+    select(-.hat, -.sigma, -.fitted, -.se.fit) # Remove details
+modelDO
+
+#------------------------------------------------------
+
