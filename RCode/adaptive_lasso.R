@@ -154,9 +154,9 @@ for(s in s.list2) {
 
 #Plot original ammonia data with predictions overlaid
 par(mfrow=c(1,1))
-plot(index(dfCLong), as.numeric(dfCLong$Selenium), type="l", xlab="", ylab="")
+plot(index(dfC), as.numeric(dfC$Selenium), type="l", xlab="", ylab="")
 title("Goodyear Selenium with Prediction base on 3 variables",xlab="Time", ylab="Selenium (mg/L)", cex.lab=1.5, cex.main=2)
-lines(index(dfCLong),  predict(mod.adaptive2, newx = Xm, s=mod.adaptive2$lambda.1se), col=2)
+lines(index(dfC),  predict(mod.adaptive2, newx = Xm, s=mod.adaptive2$lambda.1se), col=2)
 
 #-------------------------------------------------------------
 
@@ -210,3 +210,52 @@ abline(v = log(mod.adaptive3$lambda.1se), col = "blue")
 abline(v = log(6*mod.adaptive3$lambda.1se),col= "red")
 abline(v = 0,col="green")
 
+#TODO: change the following to dfcLong
+s.list2 <- c(as.numeric(mod.adaptive2$lambda.min), as.numeric(mod.adaptive2$lambda.1se), as.numeric(6*mod.adaptive2$lambda.1se), 1)
+
+par(mfrow=c(2,2), oma = c(0,0,2,0))
+
+
+for(s in s.list2) {
+    coef <- coef(mod.adaptive2, s=s)
+    
+    #Identify selected variables
+    selected_attributes <- (coef@i[-1]) 
+    colnames(Xm)[selected_attributes]
+    
+    #Compute R-squared
+    predictions <- predict(mod.adaptive2, newx=Xm, s=s)
+    SSE=mean((Ym-predictions)^2); print(SSE)
+    SST=mean((Ym-mean(Ym))^2); print(SST)
+    Rsqu=1-SSE/SST; print(Rsqu)
+    
+    #Plot prediction
+    data1 <- Ym
+    data2 <- predictions
+    max.val <- max(c(data1, data2))
+    min.val <- min(c(data1, data2))
+    data2plot <- cbind(data1, data2)
+    
+    plot(x = data2plot[,1], y = data2plot[,2]
+         , xlim=c(min.val,max.val), ylim=c(min.val,max.val)
+         , xlab="Actual", ylab="Predicted"
+         , pch=20
+         , main = paste("Lambda = ",round(s,3),", Variables = ", length(selected_attributes), collapse="")
+    )
+    abline(a=0,b=1,col="blue", lwd=2)
+    
+    legend("bottomright", 
+           inset = c(-.01,-.01),
+           legend = c("Observation", "Perfect Fit"
+                      , paste0("R-sq = ",round(Rsqu,2))),
+           col = c("black", "blue", NA),
+           pch = c(20,NA, NA),
+           lwd = c(NA,2, NA),
+           bty = "n",
+           cex=2)
+}
+
+par(mfrow=c(1,1))
+plot(index(dfC), as.numeric(dfC$Selenium), type="l", xlab="", ylab="")
+title("Goodyear Selenium with Prediction base on 3 variables",xlab="Time", ylab="Selenium (mg/L)", cex.lab=1.5, cex.main=2)
+lines(index(dfC),  predict(mod.adaptive2, newx = Xm, s=mod.adaptive2$lambda.1se), col=2)
