@@ -316,19 +316,7 @@ tibble(predictors = 1:ncol(dfND) - 1,
     facet_wrap(~ statistic, scales = "free")
 
 k = 10
-> folds = sample(1:k, nrow(coll), replace=TRUE)
-> cv.errors = matrix(NA, k, 17, dimnames=list(NULL, c(1:17)))
->
-    > for (j in 1:k){
-        + best.fit = regsubsets(Apps ~., data=coll[folds!=j,], nvmax = 17)
-        + testmat = model.matrix(Apps ~ ., data = coll[folds==j,])
-        + for (i in 1:17){
-            + coefi = coef(best.fit, id=i)
-            + xvars = names(coefi)
-            + pred = testmat[,xvars]%*%coefi
-            + cv.errors[j, i] = mean((coll$Apps[folds==j] - pred)^2)
-            + }
-        + }
+
 
 #Get cross-validation
 model.ids <- 1:5
