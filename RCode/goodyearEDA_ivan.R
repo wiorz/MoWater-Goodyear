@@ -207,7 +207,7 @@ dfDiff <- dfDiff %>%
         rename(diff_COD = COD) %>% 
         rename(diff_DO.mg.L = DO.mg.L) %>% 
         rename(diff_pH = pH) %>% 
-        rename(diff_Temp..Celsius = Temp..Celsius) 
+        rename(diff_Temp..Celsius = Temp..Celsius)
 
 #--------------
 #--- Second part of diff data, adding the effluent values ---
