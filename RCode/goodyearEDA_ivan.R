@@ -28,10 +28,6 @@ suppressMessages(library( fields))
 #This can be our starting date since we will only be ignoring 8 months of data.
 trainChangeDate <- ymd( "2011-06-15")
 
-#last date for shortcut, the +1 is for adapting to use with functions due to the
-#   comparison (< lastdate).
-lastDate <- tail(dfDataSel$date, n = 1) + 1
-
 #unstable periods
 unstablePeriodStart <- ymd( "2014-04-01")
 unstablePeriodEnd <- ymd( "2016-01-01") #rough est. according to Kate (stakeholder)
@@ -128,8 +124,24 @@ dfDataStLn$MediaType <- ifelse(dfDataStLn$ID == "Bin7", "Soil",
 #Data with Selenium focus, removing all NA rows from Selenium
 dfDataSel <- dfDataStLn[!is.na(dfDataStLn$Selenium), ]
 
+#last date for shortcut, the +1 is for adapting to use with functions due to the
+#   comparison (< lastdate).
+lastDate <- tail(dfDataSel$date, n = 1) + 1
+
 save(dfDataSel, dfDataStLn, 
      file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
+
+#---
+
+dfC <- dfDataSel[which(complete.cases(dfDataSel)), ]dfCLong <- dfDataSel
+
+dfCLong <- dfDataSel
+dfCLong$DO.mg.L <- NULL
+dfCLong$Temp..Celsius <- NULL
+dfCLong$pH <- NULL
+dfCLong <- dfCLong[complete.cases(dfCLong), ]
+
+save(dfC, dfCLong, file = "Baylor/MoWater/proj6/MoWater-Goodyear//clean/complete_cases.rda")
 
 #------------------------------------------------
 
@@ -963,7 +975,7 @@ binsTTest <- dfDataSel %>%
     add_significance()
 binsTTest
 
-save(binsTTest, file = "clean/ttestResults.rda")
+save(binsTTest, file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/ttestResults.rda")
 #-----------------------------------------------
 #density
 plotSelDen <- dfDataSel %>% 
