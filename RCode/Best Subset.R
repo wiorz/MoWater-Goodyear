@@ -331,8 +331,3 @@ for (j in 1:k){
         }
 
 
-model.ids <- 1:5
-cvErrors <-  map(model.ids, GetModelFormula, dfND, "Selenium") %>%
-    map(GetCVError, data = dfCLong) %>%
-    unlist()
-cv.errors
