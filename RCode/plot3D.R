@@ -79,3 +79,62 @@ figVL <- figVL %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
 figVL
 
 
+#------------------------------
+
+#--- using dfDiff dataset ---
+glimpse(dfDiff)
+dfD <- dfDiff
+dfD$Veg <- as.factor(dfD$Veg)
+dfD$diff_ID <- as.factor(dfD$diff_ID)
+dfD$MediaType <- as.factor(dfD$MediaType)
+dfD$TrainGroup <- as.factor(dfD$TrainGroup)
+glimpse(dfD)
+
+save(dfT, dfD, 
+     file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedFactors.rda")
+
+#---------------
+#Nit and Temp on Veg
+figNTV <- plot_ly(dfD, x = ~Nitrate, y = ~Temp..Celsius, 
+                 z = ~diff_Selenium, color = ~Veg, colors = colorsScale)
+figNTV <- figNTV %>% add_markers()
+figNTV <- figNTV %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+                                     yaxis = list(title = 'Temp Celsius'),
+                                     zaxis = list(title = 'Difference Selenium mg/L')))
+figNTV
+#TODO: find more relationships!
+#high T and low Nit for more selenium removal
+#Veg Type B is best, Veg Type A is okay, Type C is worst
+
+#---
+##Nit and Temp on Media
+figNTM <- plot_ly(dfD, x = ~Nitrate, y = ~Temp..Celsius, 
+                 z = ~diff_Selenium, color = ~MediaType, colors = colorsScale)
+figNTM <- figNTM %>% add_markers()
+figNTM <- figNTM %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+                                         yaxis = list(title = 'Temp Celsius'),
+                                         zaxis = list(title = 'Difference Selenium mg/L')))
+figNTM
+#High T and low Nit favors Selenium removal.
+#EIther temp or Nit alone isn't enough,except for PM as it just scatters.
+#GW is good, MM and PM is about the same. Soil is very stable.
+
+#---
+#
+figNCV <- plot_ly(dfD, x = ~Nitrate, y = ~COD, 
+                 z = ~diff_Selenium, color = ~Veg, colors = colorsScale)
+figNCV <- figNCV %>% add_markers()
+figNCV <- figNCV %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+                                         yaxis = list(title = 'COD mg/L'),
+                                         zaxis = list(title = 'Difference Selenium mg/L')))
+figNCV
+
+#---
+
+figNCM <- plot_ly(dfD, x = ~Nitrate, y = ~COD, 
+                  z = ~diff_Selenium, color = ~MediaType, colors = colorsScale)
+figNCM <- figNCM %>% add_markers()
+figNCM <- figNCM %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+                                         yaxis = list(title = 'COD mg/L'),
+                                         zaxis = list(title = 'Difference Selenium mg/L')))
+figNCM

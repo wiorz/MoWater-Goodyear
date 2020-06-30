@@ -138,26 +138,27 @@ save(dfDataSel, dfDataStLn,
 #NOTE: This function assumes dfDataSel exists!
 #NOTE2: Requires the dataTarget having been initialized with the matching 
 #       column names
-AddMatchingInfoToDF <- function(dataTarget, influentStr, effluentStr, nameStr){
+AddMatchingInfoToDF <- function(dataTarget, curBinStr, prevBinStr, nameStr){
     #First get the respective dataframes. The 1:10 columns are the variables we
     #are interested in,can be expanded or subtract. Hardcoded because no reason to
     #change here.
-    tmp1<-dfDataSel[which(dfDataSel$ID == effluentStr), 1:10]
-    tmp2<-dfDataSel[which(dfDataSel$ID == influentStr), 1:10]
+    tmpPrev<-dfDataSel[which(dfDataSel$ID == prevBinStr), 1:10]
+    tmpCur<-dfDataSel[which(dfDataSel$ID == curBinStr), 1:10]
     
     #The following 2 steps force-match the size (row numbers) of the two
     #datasets to be the same
-    tmp1 <- tmp1[tmp1$date %in% tmp2$date, ] 
-    tmp2 <- tmp2[tmp2$date %in% tmp1$date, ]
+    tmpPrev <- tmpPrev[tmpPrev$date %in% tmpCur$date, ] 
+    tmpCur <- tmpCur[tmpCur$date %in% tmpPrev$date, ]
     
-    #The results of subtraction willbe stored into a new dataframe.
+    #The results of subtraction will be stored into a new dataframe.
     #Get a date column first, then add more columns to it next.
-    dateTmp <- tmp1 %>% 
+    dateTmp <- tmpPrev %>% 
         select(date)
     dfDiff1 <- tibble(ID = rep(nameStr, count(dateTmp)))
     #Adding the results as column to the new dataframe
     dfDiff1 <- add_column(dfDiff1, dateTmp)
-    dfDiff1 <- add_column(dfDiff1, tmp1[ , 3:ncol(tmp1)] - tmp2[ , 3:ncol(tmp2)])
+    dfDiff1 <- add_column(dfDiff1, tmpCur[ , 3:ncol(tmpCur)] - 
+                              tmpPrev[ , 3:ncol(tmpPrev)])
     
     dataTarget <-add_row(dataTarget, dfDiff1)    
     
@@ -318,11 +319,10 @@ for(curDiffID in unique(dfDiff$diff_ID)){
 #Initialize the upcoming entry. Cannot use merge or join because the IDs will
 # not match even tho date does.
 
-
 save(dfDataSel, dfDataStLn, dfDiff, 
      file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
 
-#---------------------------------------------
+s#---------------------------------------------
 #Set functions here
 
 #@WARNING: Do NOT use this! this function doesn't work yet!
