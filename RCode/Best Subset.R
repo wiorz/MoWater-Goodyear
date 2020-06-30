@@ -180,6 +180,12 @@ leapSummaryL
 plot(leapsResultL, scale = "adjr2", 
      main = "5 variable Best Subsets Regression on Selenium with 253 observ.")
 
+dfCLong$VegTypeCTrue <- dfCLong$Veg == "VegType_C"
+FinalSubsetsModel <- lm(Selenium ~ Nitrate + COD + Phosphorus + Arsenic + VegTypeCTrue, data = dfCLong)
+summary(FinalSubsetsModel)
+
+### CODE ABOVE PRODUCES BEST SUBSETS MODEL
+
 #----------------------------------------------------------
 
 #Just using veg, no media
@@ -205,10 +211,10 @@ leapSummaryVegL
 
 # plot a table of models showing variables in each model.
 # models are ordered by the selection statistic.
-plot(leapsResultVegL, scale = "r2", 
+plot(leapsResultVegL, scale = "Cp", 
      main = "5 Best Subsets Regression on Selenium")
 
-#-----
+/#-----
 
 #Just using media, no veg
 leapsResultMediaL <- regsubsets(Selenium ~ Nitrate + COD + Phosphorus + Arsenic + 
@@ -233,7 +239,7 @@ leapSummaryMediaL
 
 # plot a table of models showing variables in each model.
 # models are ordered by the selection statistic.
-plot(leapsResultMediaL, scale = "r2", 
+plot(leapsResultMediaL, scale = "Cp", 
      main = "5 Best Subsets Regression on Selenium")
 
 #---
