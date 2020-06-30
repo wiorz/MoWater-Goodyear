@@ -9,7 +9,7 @@ library(plotly)
 
 
 #----------------------------------------------
-
+#Ignore this part
 dfT <- dfDataSel
 dfT$Veg <- as.factor(dfT$Veg)
 dfT$ID <- as.factor(dfT$ID)
@@ -48,7 +48,7 @@ fig2 <- plot_ly(dfT, x = ~Temp..Celsius, y = ~Nitrate, z = ~Selenium,
                color = ~Veg, size = ~Selenium, colors = colorsScale,
                marker = list(symbol = 'circle', sizemode = 'diameter'), 
                sizes = c(5, 100))
-fig2 <- fig %>% layout(title = 'Selenium vs VegType',
+fig2 <- fig2 %>% layout(title = 'Selenium vs VegType',
                        scene = list(xaxis = list(title = 'Temp Celsius',
                                                  gridcolor = 'rgb(255, 255, 255)',
                                                  zerolinewidth = 1,
