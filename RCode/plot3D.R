@@ -1,11 +1,10 @@
-load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
-load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/complete_cases.rda")
-load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/tshirt-wave.rda")
+#load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
+load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedFactors.rda")
+#load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/tshirt-wave.rda")
 library(tidyverse); theme_set(theme_minimal())
 theme_update(panel.grid.minor = element_blank())
-library( viridis)
-#library("plot3D")
-library("plotly")
+library(viridis)
+library(plotly)
 #-----------------------------------------
 
 
@@ -23,6 +22,19 @@ save(dfT, file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedFactors.rda
 #start here
 #load the cleanedFactors.rda above
 
+#set color here.
+colorsScale <- c('#4AC6B7', '#1972A4', '#965F8A', '#FF7070', '#C61951')
+
+#-----------------------------
+#Using scatter3D:
+#requires library("plot3D")
+# scatter3D(data = dfT, x = dfT$Nitrate, y= dfT$COD, z = dfT$Selenium, phi = 0, 
+#           bty = "g",  type = "h", ticktype = "detailed", pch = 19, cex = 0.5)
+#NOTE: cannot rotate! Not ideal. Thus using plotly instead.
+
+#----------------------------
+
+#Temp vs Nit on Veg
 fig <- plot_ly(dfT, x = ~Nitrate, y = ~Temp..Celsius, 
                z = ~Selenium, color = ~Veg, colors = colorsScale)
 fig <- fig %>% add_markers()
@@ -30,10 +42,8 @@ fig <- fig %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
                                    yaxis = list(title = 'Temp Celsius'),
                                    zaxis = list(title = 'Selenium mg/L')))
 fig
-ggsave()
 
-colorsScale <- c('#4AC6B7', '#1972A4', '#965F8A', '#FF7070', '#C61951')
-
+#using log and size scaling...
 fig2 <- plot_ly(dfT, x = ~Temp..Celsius, y = ~Nitrate, z = ~Selenium, 
                color = ~Veg, size = ~Selenium, colors = colorsScale,
                marker = list(symbol = 'circle', sizemode = 'diameter'), 
@@ -60,6 +70,7 @@ fig2 <- fig %>% layout(title = 'Selenium vs VegType',
                        plot_bgcolor = 'rgb(243, 243, 243)')
 fig2
 
+#Temp vs Nit on Media
 figM <- plot_ly(dfT, x = ~Nitrate, y = ~Temp..Celsius, 
                z = ~Selenium, color = ~MediaType, colors = colorsScale)
 figM <- figM %>% add_markers()
@@ -69,14 +80,25 @@ figM <- figM %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
 figM
 
 #------------------
-#Nit vs COD
-figVL <- plot_ly(dfT, x = ~Nitrate, y = ~COD, 
+#Nit vs COD on Veg
+figNCV <- plot_ly(dfT, x = ~Nitrate, y = ~COD, 
                 z = ~Selenium, color = ~Veg, colors = colorsScale)
-figVL <- figVL %>% add_markers()
-figVL <- figVL %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+figNCV <- figNCV %>% add_markers()
+figNCV <- figNCV %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
                                      yaxis = list(title = 'COD'),
                                      zaxis = list(title = 'Selenium mg/L')))
-figVL
+figNCV
+
+#---
+
+#Nit vs COD on Media
+figNCM <- plot_ly(dfT, x = ~Nitrate, y = ~COD, 
+                 z = ~Selenium, color = ~MediaType, colors = colorsScale)
+figNCM <- figNCM %>% add_markers()
+figNCM <- figNCM %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+                                       yaxis = list(title = 'COD'),
+                                       zaxis = list(title = 'Selenium mg/L')))
+figNCM
 
 
 #------------------------------
@@ -95,46 +117,102 @@ save(dfT, dfD,
 
 #---------------
 #Nit and Temp on Veg
-figNTV <- plot_ly(dfD, x = ~Nitrate, y = ~Temp..Celsius, 
+figNTVD <- plot_ly(dfD, x = ~Nitrate, y = ~Temp..Celsius, 
                  z = ~diff_Selenium, color = ~Veg, colors = colorsScale)
-figNTV <- figNTV %>% add_markers()
-figNTV <- figNTV %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+figNTVD <- figNTVD %>% add_markers()
+figNTVD <- figNTVD %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
                                      yaxis = list(title = 'Temp Celsius'),
                                      zaxis = list(title = 'Difference Selenium mg/L')))
-figNTV
+figNTVD
 #TODO: find more relationships!
 #high T and low Nit for more selenium removal
 #Veg Type B is best, Veg Type A is okay, Type C is worst
 
 #---
 ##Nit and Temp on Media
-figNTM <- plot_ly(dfD, x = ~Nitrate, y = ~Temp..Celsius, 
+figNTMD <- plot_ly(dfD, x = ~Nitrate, y = ~Temp..Celsius, 
                  z = ~diff_Selenium, color = ~MediaType, colors = colorsScale)
-figNTM <- figNTM %>% add_markers()
-figNTM <- figNTM %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+figNTMD <- figNTMD %>% add_markers()
+figNTMD <- figNTMD %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
                                          yaxis = list(title = 'Temp Celsius'),
                                          zaxis = list(title = 'Difference Selenium mg/L')))
-figNTM
+figNTMD
 #High T and low Nit favors Selenium removal.
 #EIther temp or Nit alone isn't enough,except for PM as it just scatters.
 #GW is good, MM and PM is about the same. Soil is very stable.
 
 #---
 #
-figNCV <- plot_ly(dfD, x = ~Nitrate, y = ~COD, 
+figNCVD <- plot_ly(dfD, x = ~Nitrate, y = ~COD, 
                  z = ~diff_Selenium, color = ~Veg, colors = colorsScale)
-figNCV <- figNCV %>% add_markers()
-figNCV <- figNCV %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+figNCVD <- figNCVD %>% add_markers()
+figNCVD <- figNCVD %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
                                          yaxis = list(title = 'COD mg/L'),
                                          zaxis = list(title = 'Difference Selenium mg/L')))
-figNCV
+figNCVD
 
 #---
 
-figNCM <- plot_ly(dfD, x = ~Nitrate, y = ~COD, 
+figNCMD <- plot_ly(dfD, x = ~Nitrate, y = ~COD, 
                   z = ~diff_Selenium, color = ~MediaType, colors = colorsScale)
-figNCM <- figNCM %>% add_markers()
-figNCM <- figNCM %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+figNCMD <- figNCMD %>% add_markers()
+figNCMD <- figNCMD %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
                                          yaxis = list(title = 'COD mg/L'),
                                          zaxis = list(title = 'Difference Selenium mg/L')))
-figNCM
+figNCMD
+
+#----------------------------------
+
+#The difference with differences on media - Nit and COD
+figDNDCMD <- plot_ly(dfD, x = ~diff_Nitrate, y = ~diff_COD, 
+                   z = ~diff_Selenium, color = ~MediaType, colors = colorsScale)
+figDNDCMD <- figDNDCMD %>% add_markers()
+figDNDCMD <- figDNDCMD %>% layout(scene = list(xaxis = list(title = 'Difference Nitrate mg/L'),
+                                           yaxis = list(title = 'Difference COD mg/L'),
+                                           zaxis = list(title = 'Difference Selenium mg/L')))
+figDNDCMD
+
+#---
+
+#The difference with differences on media - Nit and Temp
+figDNDTMD <- plot_ly(dfD, x = ~diff_Nitrate, y = ~diff_Temp..Celsius, 
+                     z = ~diff_Selenium, color = ~MediaType, colors = colorsScale)
+figDNDTMD <- figDNDTMD %>% add_markers()
+figDNDTMD <- figDNDTMD %>% layout(scene = list(xaxis = list(title = 'Difference Nitrate mg/L'),
+                                               yaxis = list(title = 'Difference Temp Celsius'),
+                                               zaxis = list(title = 'Difference Selenium mg/L')))
+figDNDTMD
+
+#---
+
+#The difference with differences on Veg - Nit and COD
+figDNDCVD <- plot_ly(dfD, x = ~diff_Nitrate, y = ~diff_COD, 
+                     z = ~diff_Selenium, color = ~Veg, colors = colorsScale)
+figDNDCVD <- figDNDCVD %>% add_markers()
+figDNDCVD <- figDNDCVD %>% layout(scene = list(xaxis = list(title = 'Difference Nitrate mg/L'),
+                                               yaxis = list(title = 'Difference COD mg/L'),
+                                               zaxis = list(title = 'Difference Selenium mg/L')))
+figDNDCVD
+
+#---
+
+#The difference with differences on Veg - Nit and Temp
+figDNDTVD <- plot_ly(dfD, x = ~diff_Nitrate, y = ~diff_Temp..Celsius, 
+                     z = ~diff_Selenium, color = ~Veg, colors = colorsScale)
+figDNDTVD <- figDNDTVD %>% add_markers()
+figDNDTVD <- figDNDTVD %>% layout(scene = list(xaxis = list(title = 'Difference Nitrate mg/L'),
+                                               yaxis = list(title = 'Difference Temp Celsius'),
+                                               zaxis = list(title = 'Difference Selenium mg/L')))
+figDNDTVD
+
+#----------------------
+
+#On DO
+
+figTDOV <- plot_ly(dfD, x = ~Temp..Celsius, y = ~DO.mg.L, 
+                     z = ~Selenium, color = ~Veg, colors = colorsScale)
+figTDOV <- figCDOV %>% add_markers()
+figTDOV <- figCDOV %>% layout(scene = list(xaxis = list(title = 'Temp Celsius'),
+                                               yaxis = list(title = 'DO mg/L'),
+                                               zaxis = list(title = 'Selenium mg/L')))
+figTDOV
