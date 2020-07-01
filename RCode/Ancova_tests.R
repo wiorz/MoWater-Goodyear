@@ -1,78 +1,9 @@
 load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
-library(tidyverse)
-library(lubridate)
-library(rstatix)
-library(ggpubr)
-library(emmeans)
-
-#-----------------------------------------------
-
-#--- Exploration ---
-
-#Sel vs Nitrate
-plotSvN <- dfDataSel %>% 
-    ggscatter(
-        x = "Nitrate", y = "Selenium",
-        facet.by  = c("Veg", "MediaType"), 
-        short.panel.labs = FALSE
-    )+
-    stat_smooth(method = "loess", span = 0.9) + 
-    labs(title= "Regression on Selenium vs Nitrate by Veg and Media")
-
-plotSvN
-ggsave(filename = "Baylor/MoWater/proj6/MoWater-Goodyear/Images/Regression - by VM Selenium v Nitrate.png", 
-       plotSvN,
-        width = 42.3, height = 23.15, units = "cm", device='png')
-
-#Sel vs Temp
-plotSvT <- dfDataSel %>% 
-        ggscatter(
-            x = "Temp..Celsius", y = "Selenium",
-            facet.by  = c("Veg", "MediaType"), 
-            short.panel.labs = FALSE
-        )+
-        stat_smooth(method = "loess", span = 0.9) +
-        labs(title= "Regression on Selenium vs Temp..Celsius by Veg and Media")
-plotSvT
-ggsave(filename = "Baylor/MoWater/proj6/MoWater-Goodyear/Images/Regression - by VM Selenium v Temp.png", 
-       plotSvT,
-       width = 42.3, height = 23.15, units = "cm", device='png')
-
-#Sel vs pH
-plotSvpH <- dfDataSel %>% 
-    ggscatter(
-        x = "pH", y = "Selenium",
-        facet.by  = c("Veg", "MediaType"), 
-        short.panel.labs = FALSE
-    )+
-    stat_smooth(method = "loess", span = 0.9) +
-    labs(title= "Regression on Selenium vs pH by Veg and Media")
-plotSvpH
-ggsave(filename = "Baylor/MoWater/proj6/MoWater-Goodyear/Images/Regression - by VM Selenium v pH.png", 
-       plotSvpH,
-       width = 42.3, height = 23.15, units = "cm", device='png')
-
-#Sel vs COD
-plotSvCOD <- dfDataSel %>% 
-    ggscatter(
-        x = "COD", y = "Selenium",
-        facet.by  = c("Veg", "MediaType"), 
-        short.panel.labs = FALSE
-    )+
-    stat_smooth(method = "loess", span = 0.9) +
-    labs(title = "Regression on Selenium vs COD by Veg and Media")
-plotSvCOD
-ggsave(filename = "Baylor/MoWater/proj6/MoWater-Goodyear/Images/Regression - by VM Selenium v COD.png", 
-       plotSvCOD,
-       width = 42.3, height = 23.15, units = "cm", device='png')
-
-#---------------------------------------------
-
-
-#---------------------------------------------
+library( emmeans)
+library( rstatix)
 
 #ANOVA
-#Uses library(emmeans) later, not for ancova but for e-means
+#Uses library(emmeans)
 #test for homogeneity; compares the behavior (slope) with the addition of covariate
 
 #-- by Bin --
@@ -82,7 +13,7 @@ anoSelvCOD <- anova_test(Selenium ~ COD * ID, data = dfDataSel)
 get_anova_table(anoSelvCOD)
 # maybe covariant! p = .1
 
-#COD + Temp vs sel 
+#COD + Temp vs sel
 anoSelvCODT <- anova_test(Selenium ~ (COD + Temp..Celsius) * ID, data = dfDataSel)
 get_anova_table(anoSelvCODT)
 # maybe covariant! p = .306
@@ -112,9 +43,7 @@ anoSelvPho <- anova_test(Selenium ~ Phosphorus * ID, data = dfDataSel)
 get_anova_table(anoSelvPho)
 # maybe is covariant! p = 0.21
 
-#---------------------------------
-
-#-- by Veg --
+#-- by veg --
 # DO test but for veg type
 anoSelvDOVeg <- anova_test(Selenium ~ DO.mg.L * Veg, data = dfDataSel)
 get_anova_table(anoSelvDOVeg)
@@ -179,10 +108,7 @@ anoSelvPhoTrain <- anova_test(Selenium ~ Phosphorus * TrainGroup, data = dfDataS
 get_anova_table(anoSelvPhoTrain)
 # p = 0.1
 
-#------------------------------------
-
 #--- by Media ---
-
 # DO test but for media type
 anoSelvDOMedia <- anova_test(Selenium ~ DO.mg.L * MediaType, data = dfDataSel)
 get_anova_table(anoSelvDOMedia)
@@ -273,72 +199,15 @@ modelDO
 
 #------------------------------------------------------
 
-#This part is based on the findings from Best Subset Regression
-#Best model is based on Temp, Nitrate, COD, Arsenic, MediaType
+dfDataSel$MediaType <- as.character(dfDataSel$MediaType)
+emmeans_test(Selenium ~ MediaType, covariate = Nitrate, p.adjust.method = "bonferroni", data = dfDataSel)
+emmeans_test(Selenium ~ MediaType, covariate = COD, p.adjust.method = "bonferroni", data = dfDataSel)
+emmeans_test(Selenium ~ MediaType, covariate = DO.mg.L, p.adjust.method = "bonferroni", data = dfDataSel)
+emmeans_test(Selenium ~ MediaType, covariate = pH, p.adjust.method = "bonferroni", data = dfDataSel)
 
-#Template for multiple regression
-# dataset %>%
-#     anova_test(
-#         score ~ age + treatment + exercise + 
-#             treatment*exercise + age*treatment +
-#             age*exercise + age*exercise*treatment
-#     )
+dfDataSel$Veg <- (dfDataSel$Veg)
+emmeans_test(Selenium ~ Veg, covariate = COD, data = dfDataSel)
+emmeans_test(Selenium ~ Veg, covariate = DO.mg.L, data = dfDataSel)
 
-
-#All add
-ancoTNCAM <- dfDataSel %>%
-                anova_test(
-                    Selenium ~ Temp..Celsius + Nitrate + COD + Arsenic + 
-                        MediaType)
-ancoTNCAM
-#p = 0.924 for media
-
-#All cross
-ancoX <- dfDataSel %>%
-                anova_test(
-                    Selenium ~ Temp..Celsius * Nitrate * COD * Arsenic * 
-                        MediaType)
-ancoX
-#p = 0.978 for Temp..Celsius:Nitrate:Arsenic
-#p = 0.982 for Temp..Celsius:Arsenic
-
-#--------------
-
-#--- Normality of residuals ---
-
-#Temp*Arsenic
-modelTA <- lm(Selenium ~ Temp..Celsius * Arsenic, data = dfDataSel)
-summary(modelTA)
-
-#Veg*DO
-modelVDO <- lm(Selenium ~ DO.mg.L * Veg, data = dfDataSel)
-summary(modelVDO)
-
-#Media*Nitrate 
-modelNM <- lm(Selenium ~ Nitrate * MediaType, data = dfDataSel)
-summary(modelNM)
-
-#Model from best subset
-modelBS <- dfDataSel %>%  
-            lm(Selenium ~ Temp..Celsius * Nitrate * COD * Arsenic * MediaType, 
-               data = .)
-summary(modelBS)
-
-modelBSP <- dfDataSel %>%  
-    lm(Selenium ~ Temp..Celsius + Nitrate + COD + Arsenic + MediaType, data = .)
-summary(modelBSP)
-
-#-----
-
-#Inspect the models with relevant details
-modelTAmetrics <- augment(modelTA) %>%
-    select(-.hat, -.sigma, -.fitted, -.se.fit) # Remove details
-head(modelTAmetrics, 3)
-
-# Inspect the model diagnostic metrics
-model.metrics <- augment(model) %>%
-    select(-.hat, -.sigma, -.fitted, -.se.fit) # Remove details
-head(model.metrics, 3)
-
-#-----
-
+dfDataSel$ID <- as.character(dfDataSel$ID)
+emmeans_test(Selenium ~ ID, covariate = DO.mg.L, p.adjust.method = "bonferroni", data = dfDataSel)

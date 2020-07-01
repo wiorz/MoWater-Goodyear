@@ -7,54 +7,59 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_chunk$set(error = TRUE)
 ```
 
-```{r load-packages, message=FALSE}
-library( tidyverse); theme_set(theme_minimal())
+```{r load-packages, message=FALSE,warning=FALSE}
+library(tidyverse); theme_set(theme_minimal())
 theme_update(panel.grid.minor = element_blank())
-library( lubridate)
-library( rcartocolor)
-library( RColorBrewer)
-library( viridis)
-library( scales)
-library( rstatix)
-library( dplyr)
-library( ggpubr)
-suppressMessages(library( fields))
+library(lubridate)
+library(rcartocolor)
+library(RColorBrewer)
+library(viridis)
+library(scales)
+library(rstatix)
+library(dplyr)
+library(ggpubr)
+library(leaps) #For Best Subset
+library(plotly) #for 3D plots
+library(fields)
+library(here) #Optional for loading files. 
+#   If library not install, call it by here::here(). If installed, just here().
+library(webshot) #for knitting html output into pdf
+
 ```
 
+Authors:  
+Ivan Ko  
+Blake Loosley  
+Lauren Varnado  
 
-Ivan Ko
-Blake Loosley
-Lauren Varnado
-
-MoWater
+# MoWater
 
 \begin{center}
 Goodyear Artificial Wetland Project
 \end{center}
 
-```{r file_loading echo=FALSE}
-#NOTE: Change loading folder!
-setwd("Baylor/MoWater/proj6/MoWater-Goodyear")
-#NOTE2: this rda is the one without the < values.
-load("clean/goodyearMoWater0.rda" )
+```{r file_loading1, echo=FALSE, warning=FALSE}
+#NOTE: If here::here() doesn't work. Install and load the library("here") 
+#   package,and replace here::here() with just here().
+load(here::here("clean", "goodyearMoWater0.rda" ))
+load(here::here("clean", "cleanedObjects.rda" ))
+load(here::here("clean", "cleanedFactors.rda" ))
+load(here::here("clean", "complete_cases.rda" ))
 ```
 
-
-```{r data_prep_and_cleaning warning=FALSE, echo = FALSE}
+## 1. Setting Important Dates 
+```{r Set_Key_Dates, warning=FALSE, message=FALSE}
 #train change date: relevant for bin 2 and 4. 
 #Before the change, bin 2 is train 3,
 #This can be our starting date since we will only be ignoring 8 months of data.
 trainChangeDate <- ymd( "2011-06-15")
 
-#last date for shortcut, the +1 is for adapting to use with functions due to the
-#   comparison (< lastdate).
-lastDate <- tail(dfDataSel$date, n = 1) + 1
-
 #unstable periods
 unstablePeriodStart <- ymd( "2014-04-01")
-unstablePeriodEnd <- ymd( "2016-01-01") #rough est. according to Kate (stakeholder)
+unstablePeriodEnd <- ymd( "2016-01-01") #rough est. according to Katie (stakeholder)
 
 #Note: 2015-04-01 may be set to 2015-01-01 because the data doesn't look right.
 #There's a spike in data around Jan 2015 that should be grouped with the next 
@@ -76,67 +81,192 @@ bin2Periods <- c(bin2Period1End, bin2Period2End)
 bin34Period1End <- ymd( "2015-04-01")
 bin34Period2End <- ymd( "2016-12-01")
 bin34Periods <- c(bin34Period1End, bin34Period2End)
-
-#Outliers to be removed, bad data points!
-# maybe  use c() so we can add more dates later
-removeDates <- ymd("2011-07-22")
-
-#----------------------------------------
-
-dfData <- dfData[!(is.na(dfData$date)), ] # also clean goodyear here
-
-dfData <- as_tibble(goodyear)
-
-#With data from only stable periods
-dfDataSt <- dfData %>% 
-                filter( date >= trainChangeDate & 
-                            date <= unstablePeriodStart |
-                            date >= unstablePeriodEnd) 
-
-#Remove the confirmed outliers
-#Can also use subset(): i.e. subset(df, B != )
-dfDataSt <- filter(dfDataSt, date != removeDates)
-
-#Identify and remove the row with very low selenium from brine
-lowBrineSel <- dfDataSt %>% 
-    filter(ID == "brine") %>% 
-    slice(which.min(Selenium))
-dfDataSt <- filter(dfDataSt, date != lowBrineSel$date)
-
-highPho <- dfDataSt %>% 
-    slice(which.max(Phosphorus))
-dfDataSt <- filter(dfDataSt, date != highPho$date)
-
-
-#lean data with mainly relevant variables 
-dfDataStLn <- dfDataSt %>% 
-                select(ID, date, Selenium, Arsenic, Nitrate, Phosphorus, 
-                       COD, DO.mg.L, pH, Temp..Celsius)
-
-#Add new column TrainGroup base on the ID
-dfDataStLn$TrainGroup <- ifelse(dfDataStLn$ID == "Bin1"| dfDataStLn$ID == "Bin5" |
-                                    dfDataStLn$ID == "Bin7", "Train 1",
-                              ifelse(dfDataStLn$ID == "Bin2" | 
-                                         dfDataStLn$ID == "Bin6", "Train 2", 
-                                     ifelse(dfDataStLn$ID == "Bin4", "Train 3", 
-                                            ifelse(dfDataStLn$ID == "Bin3", 
-                                                   "Train 4", "Brine"))))
-
-#Add new column Vegetation base on the ID
-dfDataStLn$Veg <- ifelse(dfDataStLn$ID == "Bin2", "VegType B",
-                              ifelse(dfDataStLn$ID == "Bin6" | 
-                                         dfDataStLn$ID == "Bin7", "VegType C", 
-                                     "VegType A"))
-
-#Added new column for media type base on ID
-dfDataStLn$MediaType <- ifelse(dfDataStLn$ID == "Bin7", "Soil",
-                                ifelse(dfDataStLn$ID == "Bin1" | 
-                                           dfDataStLn$ID == "Bin1", "MM", 
-                                       ifelse(dfDataStLn$ID == "Bin4", "GW", 
-                                              "PM")))
-
-#Data with Selenium focus, removing all NA rows from Selenium
-dfDataSel <- dfDataStLn[!is.na(dfDataStLn$Selenium), ]
 ```
 
+## 2. Exploratory Analysis   
+### 2.1 Boxplot on Bin Selenium level
+
+```{r Boxplot, warning=FALSE,message=FALSE}
+#different boxplot grouped by train type
+dfTest <- dfDataSel
+dfTest$ID <- factor(dfTest$ID , levels=c("Bin1", "Bin5", "Bin7", "Bin2", 
+                                         "Bin6", "Bin4", "Bin3", "brine"))
+
+boxSelTCGroup <- dfTest %>%
+    ggplot(aes(x = ID, y = Selenium)) +
+    geom_boxplot(fill = c("#D95F02", "#D95F02", "#D95F02", 
+                          "darkgreen", "darkgreen", "royalblue3", 
+                          "red3", "black")) +
+    xlab("Train Type") +
+    ylab("Selenium Content (mg/L)") +
+    labs(title= "Boxplot: Selenium by Effluent by Train") +
+    theme(legend.position = "none", axis.text=element_text(size=14))
+
+boxSelTCGroup
+```
+
+In this Boxplot,  it is shown that Bin 3 and Bin 1 have a small range with most   
+of the data occurring well above the Selenium threshold. However, there are  a   
+couple outliers that produce more successful Selenium concentrations.   
+Additionally, Bin 2 and Bin 6 have the most consistently low Selenium   
+concentration values compared to the other bins. In other words, Bins 2 and 6   
+appear to be the only bins that are skewed towards higher values whereas the   
+other bins are skewed toward the lower values. At face value, it appears that   
+Bins 2 and 6 seem to be the best for removing Selenium since they have the   
+lowest medians.
+
+### 2.2 3D Plots 
+```{r plot3D_Temp_Veg, warning=FALSE, eval=FALSE}
+#NOTE: This code is NOT run here when knitting due to the html output issue.
+
+#Set color here
+colorsScale <- c('#4AC6B7', '#1972A4', '#965F8A', '#FF7070', '#C61951')
+
+#Temp vs Nit on Veg
+fig <- plot_ly(dfT, x = ~Nitrate, y = ~Temp..Celsius, 
+               z = ~Selenium, color = ~Veg, colors = colorsScale)
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+                                   yaxis = list(title = 'Temp Celsius'),
+                                   zaxis = list(title = 'Selenium mg/L')))
+fig
+
+#---
+
+#Temp vs DO on Veg
+figTDOV <- plot_ly(dfT, x = ~Temp..Celsius, y = ~DO.mg.L, 
+                   z = ~Selenium, color = ~Veg, colors = colorsScale)
+figTDOV <- figTDOV %>% add_markers()
+figTDOV <- figTDOV %>% layout(scene = list(xaxis = list(title = 'Temp. Celsius'),
+                                           yaxis = list(title = 'DO.mg.L'),
+                                           zaxis = list(title = 'Selenium mg/L')))
+figTDOV
+
+#---
+
+#Temp vs COD
+figTCV <- plot_ly(dfT, x = ~Temp..Celsius, y = ~COD, 
+                  z = ~Selenium, color = ~Veg, colors = colorsScale)
+figTCV <- figTCV %>% add_markers()
+figTCV <- figTCV %>% layout(scene = list(xaxis = list(title = 'Temp. Celsius'),
+                                         yaxis = list(title = 'COD mg/L'),
+                                         zaxis = list(title = 'Selenium mg/L')))
+figTCV
+```
+![Temp vs Nitrate on Veg](../Images/plot-3D-Nit-Temp-Veg-Angle3.png)
+![Temp vs DO on Veg](../Images/plot-3D-Temp-DO-Veg-Angle3.png)
+![Temp vs COD on Veg](../Images/plot-3D-Nit-COD-Veg-Angle3.png)
+
+When high Temperature is coupled with low Nitrate or DO, Selenium tends to be   
+low. But COD doesn't have a clear correlation with Selenium level. 
+
+```{r plot3D_Media, warning=FALSE, eval=FALSE}
+#Temp vs Nit on Media
+figM <- plot_ly(dfT, x = ~Nitrate, y = ~Temp..Celsius, 
+               z = ~Selenium, color = ~MediaType, colors = colorsScale)
+figM <- figM %>% add_markers()
+figM <- figM %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+                                   yaxis = list(title = 'Temp Celsius'),
+                                   zaxis = list(title = 'Selenium mg/L')))
+figM
+
+#---
+
+#Nit vs COD on Media
+figNCM <- plot_ly(dfT, x = ~Nitrate, y = ~COD, 
+                 z = ~Selenium, color = ~MediaType, colors = colorsScale)
+figNCM <- figNCM %>% add_markers()
+figNCM <- figNCM %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+                                       yaxis = list(title = 'COD'),
+                                       zaxis = list(title = 'Selenium mg/L')))
+figNCM
+```
+![Temp vs Nit on Media](../Images/plot-3D-Nit-Temp-Media-Angle3.png)
+![Nit vs COD on Media](../Images/plot-3D-Nit-COD-Media-Angle3.png)
+
+In general, Media Type seems to be affected by variables in a similar way to   
+Vegetation except for Soil type. Soil Type Media is more resistant to changes in  
+the environment than other Media Types. 
+
+```{r Difference_Selenium_3D_plot, eval=FALSE, warning=FALSE}
+#Diff Nit and Temp on Veg
+figNTVD <- plot_ly(dfD, x = ~Nitrate, y = ~Temp..Celsius, 
+                 z = ~diff_Selenium, color = ~Veg, colors = colorsScale)
+figNTVD <- figNTVD %>% add_markers()
+figNTVD <- figNTVD %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+                                     yaxis = list(title = 'Temp Celsius'),
+                                     zaxis = list(title = 'Difference Selenium mg/L')))
+figNTVD
+
+#---
+
+#Diff Nit and Temp on Media
+figNTMD <- plot_ly(dfD, x = ~Nitrate, y = ~Temp..Celsius, 
+                 z = ~diff_Selenium, color = ~MediaType, colors = colorsScale)
+figNTMD <- figNTMD %>% add_markers()
+figNTMD <- figNTMD %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+                                         yaxis = list(title = 'Temp Celsius'),
+                                         zaxis = list(title = 'Difference Selenium mg/L')))
+figNTMD
+
+#---
+
+#Diff Nit vs COD on Media
+figNCMD <- plot_ly(dfD, x = ~Nitrate, y = ~COD, 
+                  z = ~diff_Selenium, color = ~MediaType, colors = colorsScale)
+figNCMD <- figNCMD %>% add_markers()
+figNCMD <- figNCMD %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
+                                         yaxis = list(title = 'COD mg/L'),
+                                         zaxis = list(title = 'Difference Selenium mg/L')))
+figNCMD
+```
+
+![Diff Selenium Nit vs Temp on Veg](../Images/plot-3D-Diff-Nit-Temp-Veg-Angle1.png)
+
+![Diff Selenium Nit vs Temp on Media](../Images/plot-3D-Diff-Nit-Temp-Media-Angle1.png)
+
+![Diff Selenium Nit vs COD on Media](../Images/plot-3D-Diff-Nit-COD-Media-Angle2.png)
+
+### 2.3 Best Subset Regression
+```{r best-subset,warning=FALSE}
+GetLeapTable <- function(leapSummaryIn){
+    result <- cbind(leapSummaryIn$adjr2, leapSummaryIn$cp, leapSummaryIn$bic)
+    return(result)
+}
+
+GetMinMax <- function(leapSummaryIn){
+    result <- data.frame(
+        Adj.R2 = which.max(leapSummaryIn$adjr2),
+        CP = which.min(leapSummaryIn$cp),
+        BIC = which.min(leapSummaryIn$bic)
+    )
+    return(result)
+}
+
+#Just using veg, no media
+leapsResultVegL <- regsubsets(Selenium ~ Nitrate + COD + Phosphorus + Arsenic + 
+                                Veg, data = dfCLong, nvmax = 5)
+# view results
+leapSummaryVegL <- summary(leapsResultVegL)
+leapTableVegL <- GetLeapTable(leapSummaryVegL)
+minMaxLeapVegL <- GetMinMax(leapSummaryVegL)
+
+minMaxLeapVegL
+#Adj.R2 CP BIC
+#5      5  3
+#---
+
+leapTableVegL
+# [3,] 0.589 14.327 -205.610
+# [5,] 0.602  7.695 -205.134
+
+leapSummaryVegL
+#Nit, COD, Phosphorus
+#Nit, COD, Phosphorus, Arsenic, Veg Type C
+
+# plot a table of models showing variables in each model.
+# models are ordered by the selection statistic.
+plot(leapsResultVegL, scale = "Cp", 
+     main = "5 Best Subsets Regression on Selenium")
+```
 
