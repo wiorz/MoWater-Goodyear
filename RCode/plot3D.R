@@ -174,7 +174,7 @@ figNTVD <- figNTVD %>% layout(scene = list(xaxis = list(title = 'Nitrate mg/L'),
                                      yaxis = list(title = 'Temp Celsius'),
                                      zaxis = list(title = 'Difference Selenium mg/L')))
 figNTVD
-#TODO: find more relationships!
+
 #high T and low Nit for more selenium removal
 #Veg Type B is best, Veg Type A is okay, Type C is worst
 
