@@ -205,9 +205,15 @@ emmeans_test(Selenium ~ MediaType, covariate = COD, p.adjust.method = "bonferron
 emmeans_test(Selenium ~ MediaType, covariate = DO.mg.L, p.adjust.method = "bonferroni", data = dfDataSel)
 emmeans_test(Selenium ~ MediaType, covariate = pH, p.adjust.method = "bonferroni", data = dfDataSel)
 
+emmeans_test(Selenium ~ MediaType, covariate = c(pH, COD, Nitrate, DO.mg.L), p.adjust.method = "bonferroni", data = dfDataSel)
+emmeans_test(Selenium ~ MediaType, covariate = Temp..Celsius, p.adjust.method = "bonferroni", data = dfDataSel)
+emmeans_test(Selenium ~ MediaType, p.adjust.method = "bonferroni", data = dfDataSel)
+
 dfDataSel$Veg <- (dfDataSel$Veg)
 emmeans_test(Selenium ~ Veg, covariate = COD, data = dfDataSel)
 emmeans_test(Selenium ~ Veg, covariate = DO.mg.L, data = dfDataSel)
 
+emmeans_test(Selenium ~ Veg, covariate = Temp..Celsius, data = dfDataSel)
+
 dfDataSel$ID <- as.character(dfDataSel$ID)
-emmeans_test(Selenium ~ ID, covariate = DO.mg.L, p.adjust.method = "bonferroni", data = dfDataSel)
+BinControlTemp <- emmeans_test(Selenium ~ ID, covariate = Temp..Celsius, p.adjust.method = "bonferroni", data = dfDataSel)
