@@ -192,6 +192,70 @@ figNTMD
 #GW is good, MM and PM is about the same. Soil is very stable.
 
 #---
+
+#Diff Temp vs COD on Veg
+figTCVD <- plot_ly(dfD, x = ~Temp..Celsius, y = ~COD, 
+                   z = ~diff_Selenium, color = ~Veg, colors = colorsScale)
+figTCVD <- figTCVD %>% add_markers()
+figTCVD <- figTCVD %>% layout(scene = list(xaxis = list(title = 'Temp Celsius'),
+                                           yaxis = list(title = 'COD mg/L'),
+                                           zaxis = list(title = 'Difference Selenium mg/L')))
+figTCVD
+
+#---
+#Diff Temp vs COD on Media
+figTCMD <- plot_ly(dfD, x = ~Temp..Celsius, y = ~COD, 
+                   z = ~diff_Selenium, color = ~MediaType, colors = colorsScale)
+figTCMD <- figTCMD %>% add_markers()
+figTCMD <- figTCMD %>% layout(scene = list(xaxis = list(title = 'Temp Celsius'),
+                                           yaxis = list(title = 'COD mg/L'),
+                                           zaxis = list(title = 'Difference Selenium mg/L')))
+figTCMD
+
+#---
+
+#Diff Temp vs DO on Veg
+figTDOVD <- plot_ly(dfD, x = ~Temp..Celsius, y = ~DO.mg.L, 
+                   z = ~diff_Selenium, color = ~Veg, colors = colorsScale)
+figTDOVD <- figTDOVD %>% add_markers()
+figTDOVD <- figTDOVD %>% layout(scene = list(xaxis = list(title = 'Temp Celsius'),
+                                           yaxis = list(title = 'DO mg/L'),
+                                           zaxis = list(title = 'Difference Selenium mg/L')))
+figTDOVD
+
+#---
+#Diff Temp vs DO on Media
+figTDOMD <- plot_ly(dfD, x = ~Temp..Celsius, y = ~DO.mg.L, 
+                   z = ~diff_Selenium, color = ~MediaType, colors = colorsScale)
+figTDOMD <- figTDOMD %>% add_markers()
+figTDOMD <- figTDOMD %>% layout(scene = list(xaxis = list(title = 'Temp Celsius'),
+                                           yaxis = list(title = 'DO mg/L'),
+                                           zaxis = list(title = 'Difference Selenium mg/L')))
+figTDOMD
+
+#---
+
+#Diff Temp vs Arsenic on Veg
+figTArVD <- plot_ly(dfD, x = ~Temp..Celsius, y = ~Arsenic, 
+                    z = ~diff_Selenium, color = ~Veg, colors = colorsScale)
+figTArVD <- figTArVD %>% add_markers()
+figTArVD <- figTArVD %>% layout(scene = list(xaxis = list(title = 'Temp Celsius'),
+                                             yaxis = list(title = 'Arsenic mg/L'),
+                                             zaxis = list(title = 'Difference Selenium mg/L')))
+figTArVD
+
+#---
+#Diff Temp vs Arsenic on Media
+figTArMD <- plot_ly(dfD, x = ~Temp..Celsius, y = ~Arsenic, 
+                    z = ~diff_Selenium, color = ~MediaType, colors = colorsScale)
+figTArMD <- figTArMD %>% add_markers()
+figTArMD <- figTArMD %>% layout(scene = list(xaxis = list(title = 'Temp Celsius'),
+                                             yaxis = list(title = 'Arsenic mg/L'),
+                                             zaxis = list(title = 'Difference Selenium mg/L')))
+figTArMD
+
+#---
+
 #Diff Nit vs COD on Veg
 figNCVD <- plot_ly(dfD, x = ~Nitrate, y = ~COD, 
                  z = ~diff_Selenium, color = ~Veg, colors = colorsScale)
