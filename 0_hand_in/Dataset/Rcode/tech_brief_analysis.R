@@ -85,47 +85,36 @@ ggsave(filename = "Baylor/MoWater/proj6/MoWater-Goodyear/Images/Selenium_Boxplot
 
 #---Best Subset Regression ---
 
-GetLeapTable <- function(leapSummaryIn){
-    result <- cbind(leapSummaryIn$adjr2, leapSummaryIn$cp, leapSummaryIn$bic)
-    return(result)
-}
-
-GetMinMax <- function(leapSummaryIn){
-    result <- data.frame(
-        Adj.R2 = which.max(leapSummaryIn$adjr2),
-        CP = which.min(leapSummaryIn$cp),
-        BIC = which.min(leapSummaryIn$bic)
-    )
-    return(result)
-}
-
-#Just using veg, no media
-leapsResultVeg <- regsubsets(Selenium ~ pH + DO.mg.L + Temp..Celsius + Nitrate + 
-                                 COD + Phosphorus + Arsenic + Veg,
-                             data = dfDataSel, nvmax = 10)
+leapsResultL <- regsubsets(Selenium ~ Nitrate + COD + Phosphorus + Arsenic + 
+                               Veg + MediaType,
+                           data = dfCLong, nvmax = 5)
 # view results
-leapSummaryVeg <- summary(leapsResultVeg)
-leapTableVeg <- GetLeapTable(leapSummaryVeg)
+leapSummaryL <- summary(leapsResultL)
+leapTableL <- GetLeapTable(leapSummaryL)
+minMaxLeapL <- GetMinMax(leapSummaryL)
 
-#Find the min and max
-minMaxLeapVeg <- GetMinMax(leapSummaryVeg)
-minMaxLeapVeg
-#Adj.R2 CP BIC
-#6      5  5
+minMaxLeapL
+#minMaxLeap result
+#max adj.r2     min cp      min bic
+#5              5           3
 #---
-
-leapTableVeg
-#[5,] 0.953  2.235 -41.444
-#[6,] 0.954  3.516 -40.389
-
-leapSummaryVeg
-#Temp, Nit, COD, Arsenic, Veg Type C
-#pH, Temp, Nit, COD, Arsenic, Veg Type C
+leapTableL 
+# [3,] 0.589 12.143 -205.610
+# [5,] 0.602  5.601 -205.134
+#---
+leapSummaryL
+#[3,] Nit, COD, Phosphorus
+#[5,] Nit, COD, Phosphorus, Arsenic, Veg Type C
 
 # plot a table of models showing variables in each model.
 # models are ordered by the selection statistic.
-plot(leapsResultVeg, scale = "Cp", 
-     main = "10 Best Subsets Regression on Selenium")
+plot(leapsResultL, scale = "adjr2", cex.axis = 3, 
+     main = "5 Best Subsets Regression on Selenium with 253 observ by Adjusted R-Square")
+
+
+dfCLong$VegTypeCTrue <- dfCLong$Veg == "VegType_C"
+FinalSubsetsModel <- lm(Selenium ~ Nitrate + COD + Phosphorus + Arsenic + VegTypeCTrue, data = dfCLong)
+summary(FinalSubsetsModel)
 
 
 #--------------------------------------------------------

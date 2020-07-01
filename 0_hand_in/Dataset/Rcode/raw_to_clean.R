@@ -1,8 +1,15 @@
-load("goodyearMoWater0.rda")
 library(lubridate)
 library(dplyr)
 suppressMessages(library( fields))
+#library(here) #Optional for loading files. 
+#   If library not install, call it by here::here(). If installed, just here().
 
+load(here::here("Documents","Baylor", "MoWater", "proj6", "MoWater-Goodyear", 
+                "0_hand_in", "Dataset", "clean", "goodyearMoWater0.rda"))
+
+#------------------------------------------------
+#--- Set dates ---
+#------------------------------------------------
 #train change date: relevant for bin 2 and 4. 
 #Before the change, bin 2 is train 3,
 #This can be our starting date since we will only be ignoring 8 months of data.
@@ -37,7 +44,9 @@ bin34Periods <- c(bin34Period1End, bin34Period2End)
 # maybe  use c() so we can add more dates later
 removeDates <- ymd("2011-07-22")
 
-#----------------------------------------
+#------------------------------------------------
+#--- Data Cleaning ---
+#------------------------------------------------
 
 # Prep for matching size if needed! Some bins have an extra line of NA, row num 
 # should be 438.
@@ -109,11 +118,14 @@ dfDataSel <- dfDataStLn[!is.na(dfDataStLn$Selenium), ]
 lastDate <- tail(dfDataSel$date, n = 1) + 1
 
 save(dfDataSel, dfDataStLn, 
-     file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
+     file = here::here("Documents", "Baylor", "MoWater", "proj6", 
+                       "MoWater-Goodyear", "clean", "cleanedObjects.rda"))
 
-#---
+#------------------------------------------------
+#--- Datasets with all NAs removed ---
+#------------------------------------------------
 
-dfC <- dfDataSel[which(complete.cases(dfDataSel)), ]dfCLong <- dfDataSel
+dfC <- dfDataSel[which(complete.cases(dfDataSel)), ]
 
 dfCLong <- dfDataSel
 dfCLong$DO.mg.L <- NULL
@@ -122,19 +134,20 @@ dfCLong$pH <- NULL
 dfCLong <- dfCLong[complete.cases(dfCLong), ]
 
 save(dfC, dfCLong, 
-     file = "Baylor/MoWater/proj6/MoWater-Goodyear//clean/complete_cases.rda")
+     file = here::here("Documents", "Baylor", "MoWater", "proj6", 
+                       "MoWater-Goodyear", "clean", "complete_cases.rda"))
 
 #------------------------------------------------
-
 #--- Make data object for the difference between influent and effluent ---
+#------------------------------------------------
 
 #NOTE: This function assumes dfDataSel exists!
 #NOTE2: Requires the dataTarget having been initialized with the matching 
 #       column names
 AddMatchingInfoToDF <- function(dataTarget, curBinStr, prevBinStr, nameStr){
     #First get the respective dataframes. The 1:10 columns are the variables we
-    #are interested in,can be expanded or subtract. Hardcoded because no reason to
-    #change here.
+    #are interested in,can be expanded or subtract. Hardcoded because no reason 
+    #to change here.
     tmpPrev<-dfDataSel[which(dfDataSel$ID == prevBinStr), 1:10]
     tmpCur<-dfDataSel[which(dfDataSel$ID == curBinStr), 1:10]
     
@@ -275,7 +288,7 @@ dfDiff <- left_join(dfDiff, tmpMatched)
 tmp <- GetBinEffluentData("Bin1", "B1-S")
 dfDiff <- CombineDFFromSrcToTarget(dfDiff, tmp, "B1-S")
 
-#SHOW/NAP TIME!!!!!
+#Rest/nap time!!!!!
 #VERY SLOW program!!! Will require at least 5-10 mins depending on your machine.
 for(curDiffID in unique(dfDiff$diff_ID)){
     if(curDiffID != "B1-S"){
@@ -313,11 +326,32 @@ for(curDiffID in unique(dfDiff$diff_ID)){
 # not match even tho date does.
 
 save(dfDataSel, dfDataStLn, dfDiff, 
-     file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
+     file = here::here("Documents", "Baylor", "MoWater", "proj6", 
+                       "MoWater-Goodyear", "clean", "cleanedObjects.rda"))
 
-#-----------------------
+#---------------------------------
+#--- For 3D plot ---
+#---------------------------------
 
+dfT <- dfDataSel
+dfT$Veg <- as.factor(dfT$Veg)
+dfT$ID <- as.factor(dfT$ID)
+dfT$MediaType <- as.factor(dfT$MediaType)
+dfT$TrainGroup <- as.factor(dfT$TrainGroup)
+
+dfD <- dfDiff
+dfD$Veg <- as.factor(dfD$Veg)
+dfD$diff_ID <- as.factor(dfD$diff_ID)
+dfD$MediaType <- as.factor(dfD$MediaType)
+dfD$TrainGroup <- as.factor(dfD$TrainGroup)
+
+save(dfT, dfD, 
+     file = here::here("Documents", "Baylor", "MoWater", "proj6", 
+                       "MoWater-Goodyear", "clean", "cleanedFactors.rda"))
+
+#---------------------------------
 #--- t-test ---
+#---------------------------------
 #uses library( rstatix)
 
 binsTTest <- dfDataSel %>% 
@@ -325,7 +359,9 @@ binsTTest <- dfDataSel %>%
     add_significance()
 binsTTest
 
-save(binsTTest, file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/ttestResults.rda")
+save(binsTTest, 
+     file = here::here("Documents", "Baylor", "MoWater", "proj6", 
+                        "MoWater-Goodyear", "clean", "ttestResults.rda"))
 
 #------------------------------------
 
@@ -343,7 +379,9 @@ coefMat
 rssMat <- lapply( mods, "[[", "r.squared")
 rssMat
 
-save(mods, coefMat, rssMat, file = "clean/lmResults.rda")
+save(mods, coefMat, rssMat, 
+     file = here::here("Documents", "Baylor", "MoWater", "proj6", 
+                       "MoWater-Goodyear", "clean", "lmResults.rda"))
 
 #-----------------------------------
 
@@ -360,4 +398,6 @@ coefDiffMat
 rssDiffMat <- lapply( modsDiff, "[[", "r.squared")
 rssDiffMat
 
-save(modsDiff, coefDiffMat, rssDiffMat, file = "clean/lmDiffResults.rda")
+save(modsDiff, coefDiffMat, rssDiffMat, 
+     file = here::here("Documents", "Baylor", "MoWater", "proj6", 
+                       "MoWater-Goodyear", "clean", "lmDiffResults.rda"))

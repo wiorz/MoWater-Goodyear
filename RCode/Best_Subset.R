@@ -214,7 +214,7 @@ leapSummaryVegL
 plot(leapsResultVegL, scale = "Cp", 
      main = "5 Best Subsets Regression on Selenium")
 
-/#-----
+#-----
 
 #Just using media, no veg
 leapsResultMediaL <- regsubsets(Selenium ~ Nitrate + COD + Phosphorus + Arsenic + 
