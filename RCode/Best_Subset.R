@@ -1,6 +1,6 @@
 load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
 load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/complete_cases.rda")
-load("Baylor/MoWater/proj6/MoWater-Goodyear/clean/tshirt-wave.rda")
+
 library(tidyverse); theme_set(theme_minimal())
 theme_update(panel.grid.minor = element_blank())
 library(leaps)
@@ -52,6 +52,7 @@ leapSummary
 
 # plot a table of models showing variables in each model.
 # models are ordered by the selection statistic.
+#NOTE: can change the scale to others such as adjr2, Cp, or bic.
 plot(leapsResult, scale = "r2", 
      main = "10 variable Best Subsets Regression on Selenium with 17 observ.")
 
@@ -176,7 +177,7 @@ leapSummaryL
 
 # plot a table of models showing variables in each model.
 # models are ordered by the selection statistic.
-plot(leapsResultL, scale = "r2", 
+plot(leapsResultL, scale = "adjr2", 
      main = "5 variable Best Subsets Regression on Selenium with 253 observ.")
 
 dfCLong$VegTypeCTrue <- dfCLong$Veg == "VegType_C"
@@ -213,7 +214,7 @@ leapSummaryVegL
 plot(leapsResultVegL, scale = "Cp", 
      main = "5 Best Subsets Regression on Selenium")
 
-/#-----
+#-----
 
 #Just using media, no veg
 leapsResultMediaL <- regsubsets(Selenium ~ Nitrate + COD + Phosphorus + Arsenic + 
@@ -273,6 +274,7 @@ plot(leapsResultTrainL, scale = "r2",
 #-------------------------------------------
 
 #--- K Fold cross validation ---
+#NOTE: THIS SECTION DOES NOT WORK!!!
 
 
 GetModelFormula <- function(id, object, outcome){

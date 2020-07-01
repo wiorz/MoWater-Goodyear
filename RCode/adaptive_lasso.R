@@ -38,18 +38,6 @@ weights <- 1/abs(matrix(coef(mod.ridge, s=mod.ridge$lambda.min)[, 1][-1]))^1
 #1. How do I convert that date column into something similar to ab3_do_example?
 #2. Will the above conversion even fix the issue? If not, what else can I do?
 
-predict.col <- which(colnames((ab3_do_example)) == "AB3.Z7.Ammonia.mg.N.L")
-yy <- as.matrix(ab3_do_example[,predict.col])
-xx <- as.matrix(ab3_do_example[,-predict.col])
-
-dfCLong <- dfDataSel
-dfCLong$DO.mg.L <- NULL
-dfCLong$Temp..Celsius <- NULL
-dfCLong$pH <- NULL
-dfCLong <- dfCLong[complete.cases(dfCLong), ]
-
-save(dfC, dfCLong, file = "Baylor/MoWater/proj6/MoWater-Goodyear//clean/tshirt-wave.rda")
-
 #coVarCols <- c("ID", "Selenium", "Veg", "TrainGroup", "MediaType")
 #yy <- as.matrix(dfC[,c("date", "Selenium")]) # this is to extract date the response variable
 #Below is to get the columns (other than Selenium) that are numeric to avoid error.

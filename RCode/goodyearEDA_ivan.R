@@ -21,16 +21,13 @@ suppressMessages(library( fields))
 
 #head(goodyear)
 
-#------------------------------------------------------
-
+#------------------------------------------------
+#--- Set dates ---
+#------------------------------------------------
 #train change date: relevant for bin 2 and 4. 
 #Before the change, bin 2 is train 3,
 #This can be our starting date since we will only be ignoring 8 months of data.
 trainChangeDate <- ymd( "2011-06-15")
-
-#last date for shortcut, the +1 is for adapting to use with functions due to the
-#   comparison (< lastdate).
-lastDate <- tail(dfDataSel$date, n = 1) + 1
 
 #unstable periods
 unstablePeriodStart <- ymd( "2014-04-01")
@@ -61,7 +58,9 @@ bin34Periods <- c(bin34Period1End, bin34Period2End)
 # maybe  use c() so we can add more dates later
 removeDates <- ymd("2011-07-22")
 
-#----------------------------------------
+#------------------------------------------------
+#--- Data Cleaning ---
+#------------------------------------------------
 
 # Prep for matching size if needed! Some bins have an extra line of NA, row num 
 # should be 438.
@@ -77,9 +76,9 @@ dfData <- as_tibble(goodyear)
 
 #With data from only stable periods
 dfDataSt <- dfData %>% 
-                filter( date >= trainChangeDate & 
-                            date <= unstablePeriodStart |
-                            date >= unstablePeriodEnd) 
+    filter( date >= trainChangeDate & 
+                date <= unstablePeriodStart |
+                date >= unstablePeriodEnd) 
 
 #Remove the confirmed outliers
 #Can also use subset(): i.e. subset(df, B != )
@@ -98,42 +97,61 @@ dfDataSt <- filter(dfDataSt, date != highPho$date)
 
 #lean data with mainly relevant variables 
 dfDataStLn <- dfDataSt %>% 
-                select(ID, date, Selenium, Arsenic, Nitrate, Phosphorus, 
-                       COD, DO.mg.L, pH, Temp..Celsius)
+    select(ID, date, Selenium, Arsenic, Nitrate, Phosphorus, 
+           COD, DO.mg.L, pH, Temp..Celsius)
 
 #Add new column TrainGroup base on the ID
 dfDataStLn$TrainGroup <- ifelse(dfDataStLn$ID == "Bin1"| dfDataStLn$ID == "Bin5" |
                                     dfDataStLn$ID == "Bin7", "Train_1",
-                              ifelse(dfDataStLn$ID == "Bin2" | 
-                                         dfDataStLn$ID == "Bin6", "Train_2", 
-                                     ifelse(dfDataStLn$ID == "Bin4", "Train_3", 
-                                            ifelse(dfDataStLn$ID == "Bin3", 
-                                                   "Train_4", "Brine"))))
+                                ifelse(dfDataStLn$ID == "Bin2" | 
+                                           dfDataStLn$ID == "Bin6", "Train_2", 
+                                       ifelse(dfDataStLn$ID == "Bin4", "Train_3", 
+                                              ifelse(dfDataStLn$ID == "Bin3", 
+                                                     "Train_4", "Brine"))))
 
 #Add new column Vegetation base on the ID
 dfDataStLn$Veg <- ifelse(dfDataStLn$ID == "Bin2", "VegType_B",
-                              ifelse(dfDataStLn$ID == "Bin6" | 
-                                         dfDataStLn$ID == "Bin7", "VegType_C", 
-                                            ifelse(dfDataStLn$ID == "brine", 
-                                                   "brine", "VegType_A")))
+                         ifelse(dfDataStLn$ID == "Bin6" | 
+                                    dfDataStLn$ID == "Bin7", "VegType_C", 
+                                ifelse(dfDataStLn$ID == "brine", 
+                                       "brine", "VegType_A")))
 
 #Added new column for media type base on ID
 dfDataStLn$MediaType <- ifelse(dfDataStLn$ID == "Bin7", "Soil",
-                                ifelse(dfDataStLn$ID == "Bin1" | 
-                                           dfDataStLn$ID == "Bin1", "MM", 
-                                       ifelse(dfDataStLn$ID == "Bin4", "GW", 
-                                              ifelse(dfDataStLn$ID == "brine", 
-                                                     "brine", "PM"))))
+                               ifelse(dfDataStLn$ID == "Bin1" | 
+                                          dfDataStLn$ID == "Bin1", "MM", 
+                                      ifelse(dfDataStLn$ID == "Bin4", "GW", 
+                                             ifelse(dfDataStLn$ID == "brine", 
+                                                    "brine", "PM"))))
 
 #Data with Selenium focus, removing all NA rows from Selenium
 dfDataSel <- dfDataStLn[!is.na(dfDataStLn$Selenium), ]
+
+#last date for shortcut, the +1 is for adapting to use with functions due to the
+#   comparison (< lastdate).
+lastDate <- tail(dfDataSel$date, n = 1) + 1
 
 save(dfDataSel, dfDataStLn, 
      file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
 
 #------------------------------------------------
+#--- Datasets with all NAs removed ---
+#------------------------------------------------
 
+dfC <- dfDataSel[which(complete.cases(dfDataSel)), ]
+
+dfCLong <- dfDataSel
+dfCLong$DO.mg.L <- NULL
+dfCLong$Temp..Celsius <- NULL
+dfCLong$pH <- NULL
+dfCLong <- dfCLong[complete.cases(dfCLong), ]
+
+save(dfC, dfCLong, 
+     file = "Baylor/MoWater/proj6/MoWater-Goodyear//clean/complete_cases.rda")
+
+#------------------------------------------------
 #--- Make data object for the difference between influent and effluent ---
+#------------------------------------------------
 
 #NOTE: This function assumes dfDataSel exists!
 #NOTE2: Requires the dataTarget having been initialized with the matching 
@@ -200,15 +218,15 @@ dfDiff <- AddMatchingInfoToDF(dfDiff, "Bin4", "brine", "B4-S")
 
 #renaming so that the data won't get overwritten in the next part.
 dfDiff <- dfDiff %>% 
-        rename(diff_ID = ID) %>% 
-        rename(diff_Selenium = Selenium) %>% 
-        rename(diff_Arsenic = Arsenic) %>% 
-        rename(diff_Nitrate = Nitrate) %>% 
-        rename(diff_Phosphorus = Phosphorus) %>% 
-        rename(diff_COD = COD) %>% 
-        rename(diff_DO.mg.L = DO.mg.L) %>% 
-        rename(diff_pH = pH) %>% 
-        rename(diff_Temp..Celsius = Temp..Celsius)
+    rename(diff_ID = ID) %>% 
+    rename(diff_Selenium = Selenium) %>% 
+    rename(diff_Arsenic = Arsenic) %>% 
+    rename(diff_Nitrate = Nitrate) %>% 
+    rename(diff_Phosphorus = Phosphorus) %>% 
+    rename(diff_COD = COD) %>% 
+    rename(diff_DO.mg.L = DO.mg.L) %>% 
+    rename(diff_pH = pH) %>% 
+    rename(diff_Temp..Celsius = Temp..Celsius)
 
 #--------------
 #--- Second part of diff data, adding the effluent values ---
@@ -282,7 +300,7 @@ dfDiff <- left_join(dfDiff, tmpMatched)
 tmp <- GetBinEffluentData("Bin1", "B1-S")
 dfDiff <- CombineDFFromSrcToTarget(dfDiff, tmp, "B1-S")
 
-#SHOW/NAP TIME!!!!!
+#Rest/nap time!!!!!
 #VERY SLOW program!!! Will require at least 5-10 mins depending on your machine.
 for(curDiffID in unique(dfDiff$diff_ID)){
     if(curDiffID != "B1-S"){
@@ -322,7 +340,73 @@ for(curDiffID in unique(dfDiff$diff_ID)){
 save(dfDataSel, dfDataStLn, dfDiff, 
      file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedObjects.rda")
 
-s#---------------------------------------------
+#---------------------------------
+#--- For 3D plot ---
+#---------------------------------
+
+dfT <- dfDataSel
+dfT$Veg <- as.factor(dfT$Veg)
+dfT$ID <- as.factor(dfT$ID)
+dfT$MediaType <- as.factor(dfT$MediaType)
+dfT$TrainGroup <- as.factor(dfT$TrainGroup)
+
+dfD <- dfDiff
+dfD$Veg <- as.factor(dfD$Veg)
+dfD$diff_ID <- as.factor(dfD$diff_ID)
+dfD$MediaType <- as.factor(dfD$MediaType)
+dfD$TrainGroup <- as.factor(dfD$TrainGroup)
+
+save(dfT, dfD, 
+     file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/cleanedFactors.rda")
+
+#---------------------------------
+#--- t-test ---
+#---------------------------------
+#uses library( rstatix)
+
+binsTTest <- dfDataSel %>% 
+    t_test(Selenium ~ ID) %>%
+    add_significance()
+binsTTest
+
+save(binsTTest, file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/ttestResults.rda")
+
+#------------------------------------
+
+#--- Linear Regression And Modeling ----
+#Performing lm on all variables/columns besides ID,date and Selenium, and store result
+mods <- lapply(dfDataSel[, c(3, 5:ncol(dfDataSel))], 
+               function(x) summary(lm(dfDataSel$Selenium ~ x)))
+mods
+
+#store the coeffcient of lm results
+coefMat <- lapply( mods, coef)
+coefMat
+
+#store the r-squaredvalues
+rssMat <- lapply( mods, "[[", "r.squared")
+rssMat
+
+save(mods, coefMat, rssMat, file = "clean/lmResults.rda")
+
+#-----------------------------------
+
+#Apply lm but skip diff_ID, date, diff_Selenium (respond var) and Selenium.
+modsDiff <- lapply(dfDiff[ , c(5:10, 12:ncol(dfDiff))], 
+                   function(x) summary(lm(dfDiff$diff_Selenium ~ x)))
+modsDiff
+
+#store the coeffcient of lm results
+coefDiffMat <- lapply( modsDiff, coef)
+coefDiffMat
+
+#store the r-squaredvalues
+rssDiffMat <- lapply( modsDiff, "[[", "r.squared")
+rssDiffMat
+
+save(modsDiff, coefDiffMat, rssDiffMat, file = "clean/lmDiffResults.rda")
+
+#---------------------------------------------
 #Set functions here
 
 #@WARNING: Do NOT use this! this function doesn't work yet!
@@ -963,7 +1047,7 @@ binsTTest <- dfDataSel %>%
     add_significance()
 binsTTest
 
-save(binsTTest, file = "clean/ttestResults.rda")
+save(binsTTest, file = "Baylor/MoWater/proj6/MoWater-Goodyear/clean/ttestResults.rda")
 #-----------------------------------------------
 #density
 plotSelDen <- dfDataSel %>% 
@@ -1426,61 +1510,6 @@ summary(fit)
 
 #----------------------------------------------
 
-mods
-
-fitAll <- dfDataSel %>% 
-        lm( Selenium ~ Nitrate + COD + DO.mg.L + pH + Veg + MediaType, data = .)
-summary(fitAll)
-#Adj R = 0.575
-
-fitVegDO <- dfDataSel %>% 
-    lm( Selenium ~ DO.mg.L + Veg, data = .)
-summary(fitVegDO)
-#Mult R = 0.2288
-
-fitVeg <- dfDataSel %>% 
-    lm( Selenium ~ COD + DO.mg.L + Veg, data = .)
-summary(fitVeg)
-predict(fitVeg)
-#Adj R = 0.489
-
-# See the result
-df3 %>% as.data.frame()
-
-fitVegMedia <- dfDataSel %>% 
-    lm( Selenium ~ COD + DO.mg.L + Veg + MediaType, data = .)
-summary(fitVegMedia)
-#Adj R = 0.593
-
-fitMedia <- dfDataSel %>% 
-    lm( Selenium ~ COD + DO.mg.L + pH + Nitrate + MediaType, data = .)
-summary(fitMedia)
-#Adj R = 0.403
-
-fitVegMediaWpH <- dfDataSel %>% 
-    lm( Selenium ~ COD + DO.mg.L + pH + Veg + MediaType, data = .)
-summary(fitVegMediaWpH)
-#Adj R = 0.576
-
-fitVegMediaWNit <- dfDataSel %>% 
-    lm( Selenium ~ COD + DO.mg.L + Nitrate + Veg + MediaType, data = .)
-summary(fitVegMediaWNit)
-#Adj R = 0.599
-
-fitAllTypes <- dfDataSel %>% 
-    lm( Selenium ~ COD + DO.mg.L + Veg + MediaType + ID + TrainGroup, data = .)
-summary(fitAllTypes)
-#Adj R = 0.5432
-
-fitDiff <- dfDataSel %>% 
-    lm( Selenium ~ Nitrate + COD + DO.mg.L + pH + Veg + MediaType, data = .)
-summary(fitDiff)
-
-
-modelDO <- lm(Selenium ~ DO.mg.L + ID, data = dfDataSel)
-modelDO.metrics <- augment(modelDO) %>%
-    select(-.hat, -.sigma, -.fitted, -.se.fit) # Remove details
-modelDO
 
 #------------------------------------------------------
 
